@@ -1,10 +1,10 @@
 # Flexible Variational Autoencoder (VAE) 
 ## To Do:
-- [] Add more layers to chose from when compiling the structure of encoder and decoder
-- [] Add latent spaces quantization
-- [] Add intermidiate layer quantization
-- [] Add mixed precision support
-- [] Multi-dim data support
+- [ ] Add more layers to chose from when compiling the structure of encoder and decoder
+- [ ] Add latent spaces quantization
+- [ ] Add intermidiate layer quantization
+- [ ] Add mixed precision support
+- [ ] Multi-dim data support
 ## Working principles
 ## Implementation choices
 
