@@ -1,0 +1,54 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Dec 26 15:53:04 2023
+
+@author: filipk
+"""
+
+
+
+
+
+
+infer =0
+if infer ==1:
+    device = "cuda"
+    model = VAE(encoder.VAE_Encoder, decoder.VAE_Decoder, args).to(device)
+    model.eval()   
+    with torch.no_grad():
+        #script_module = torch.jit.load("/home/filipk/Desktop/VAE_SD_LOWRES/models/VAE/ckpt.pt")
+# =============================================================================
+#         ckpt = torch.load("/home/filipk/Desktop/VAE_FINAL_v2/models/VAE_returnto128_nodrop_16space/128_to_16_kld_mult_0.01_epoch_2181ckpt.pt")
+# =============================================================================
+        ckpt = torch.load(args.resume_path)
+        model.load_state_dict(ckpt['model_state_dict'])
+        for i in range(10):
+            images =model.sample2(5,16)
+            epoch='test_noise_3more_readjust'+str(i)
+            save_images(images.detach(), os.path.join("results", args.run_name, f"{epoch}_orig.jpg"))
+        
+    dataloader = get_data(args)      
+    pbar = tqdm(dataloader)    
+    with torch.no_grad():
+        for i, (images, _) in enumerate(pbar):
+            images = images.to(device)
+            noise = torch.randn((2, 4, 8, 8)).to(torch.device('cuda:0'))
+            predicted_image = model(images , noise)
+        epoch='test3'
+        save_images(predicted_image.detach(), os.path.join("results", args.run_name, f"{epoch}.jpg"))
+        
+def interpolate(img1, img2):
+    device = "cuda"
+    model = VAE(encoder.VAE_Encoder, decoder.VAE_Decoder, args).to(device)
+    model.eval()   
+    with torch.no_grad():
+        #script_module = torch.jit.load("/home/filipk/Desktop/VAE_SD_LOWRES/models/VAE/ckpt.pt")
+        ckpt = torch.load("/home/filipk/Desktop/VAE_FINAL_v2/models/VAE_returnto128_nodrop/128_to_256_kld_mult_0.01_epoch_546ckpt.pt")
+        model.load_state_dict(ckpt['model_state_dict'])
+        pic1=load_image("/home/filipk/Desktop/TRAIN/archive(2)/"+str(img1)).to(torch.device('cuda:0'))
+        pic2=load_image("/home/filipk/Desktop/TRAIN/archive(2)/"+str(img2)).to(torch.device('cuda:0'))
+        pic_in= (pic1+pic2)/2
+        noise = torch.randn((pic1.size(0), 4, 256)).to(torch.device('cuda:0'))
+        pic_res=model(pic_in,noise)
+        save_images(pic_res.detach(), "/home/filipk/Desktop/res.jpg")
