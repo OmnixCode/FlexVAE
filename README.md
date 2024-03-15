@@ -7,6 +7,28 @@
 - [ ] Multi-dim data support
 ## Working principles
 ## Implementation choices
+Encoder and decoder networks used in VAE are defined with the help of structure JSON files.
+This list is then passed to sequential model generator.
+In order to shorten notation, we can also string multiple same layers with the help of multiplication operator.
+i.e. "2*VAERB_256_256" is short notation for:
+```json
+[
+  "VAERB_256_256",
+  "VAERB_256_256",
+]
+```
+Parameters are passed after the layer abbreviation
+i.e. "C2d_3_128_3_1_1" is a Conv2D layer with:
+'''
+in_channels = 3, 
+out_channels = 128, 
+kernel_size = 3, 
+stride=1, 
+padding=1
+'''
+
+Our basic encoder model is defined as:
+
 ```json
 [
   "C2d_3_128_3_1_1",
@@ -21,10 +43,10 @@
   "GN_32_256",
   "SiLU",
   "C2d_256_8_3_1_1",
-  "C2d_8_8_1_1_0",
-  "MaxP_2_2"
+  "C2d_8_8_1_1_0"
 ]
 ```
+We can also visualise its structure:
 
 ![Example structure of VAE encoder](/assets/encod.png)
 ## How to use
