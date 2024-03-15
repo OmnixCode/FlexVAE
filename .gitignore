@@ -160,8 +160,10 @@ cython_debug/
 #.idea/
 
 # Images
-*.jpg
-*.png
+results/**/*.jpg
+results/**/*.png
+samples/**/*.jpg
+samples/**/*.png
 
 # Models
 
