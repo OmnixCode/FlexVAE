@@ -55,6 +55,28 @@ We can also visualise its structure:
 
 ![Example structure of VAE encoder](/assets/encod.png)
 
+Alternatively basic decoder model is defined as:
+```json
+[
+  "C2d_4_4_1_1_0",
+  "C2d_4_512_3_1_1",
+  "VAERB_512_512",
+  "VAEA_512",
+  "4*VAERB_512_512",
+  "UpS_4",
+  "C2d_512_512_3_1_1",
+  "VAERB_512_256",
+  "2*VAERB_256_256",
+  "UpS_4",
+  "C2d_256_256_3_1_1",
+  "VAERB_256_128",
+  "2*VAERB_128_128",
+  "GN_32_128",
+  "SiLU",
+  "C2d_128_3_3_1_1"
+]
+```
+
 ### Loss functions
 
 Loss function for the the model is expressed as: 
