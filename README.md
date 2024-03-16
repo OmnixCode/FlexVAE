@@ -53,8 +53,10 @@ We can also visualise its structure:
 
 ### Loss functions
 
-Loss function for the the model is expressed as 
+Loss function for the the model is expressed as: 
 $$L_{total} = \alpha  \cdot  L_{reconstruction} + kld{\textunderscore}weight  \cdot  L_{KLD} + ssim{\textunderscore}metrics  \cdot  \beta  \cdot  (1-L_{ssim}) + sparse{\textunderscore}metrics \cdot L\_{sparse} $$
+
+Where $ssim{\textunderscore}metrics$ and sparse{\textunderscore}metrics are logical variables that take the {\color{red}True} or {\color{red}False}
 
 
 ## How to use
