@@ -32,8 +32,8 @@ padding=1
   <tr>
     <td style="width: 50%; padding: 10px; vertical-align: top;">
       <!-- Left Column JSON -->
-      <pre style="padding: 10px; border: 1px solid #ccc; overflow: auto;">
-```json
+      <div class="highlight highlight-source-json">
+        <pre>
 [
   "C2d_3_128_3_1_1",
   "2*VAERB_128_128",
@@ -49,24 +49,23 @@ padding=1
   "C2d_256_8_3_1_1",
   "C2d_8_8_1_1_0"
 ]
-```json
-</pre>
+        </pre>
+      </div>
     </td>
     <td style="width: 50%; padding: 10px; vertical-align: top;">
       <!-- Right Column JSON -->
-      <pre style="padding: 10px; border: 1px solid #ccc; overflow: auto;">
-```json
+      <div class="highlight highlight-source-json">
+        <pre>
 {
   "key1": "value1",
   "key2": "value2",
   "key3": "value3"
 }
-```json
-</pre>
+        </pre>
+      </div>
     </td>
   </tr>
 </table>
-
 
 
 Our basic encoder model is defined as:
