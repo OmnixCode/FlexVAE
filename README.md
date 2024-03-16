@@ -29,7 +29,8 @@ padding=1
 ```
 
 Available layers and their abbreviations:
-```
+```python
+{
 'C2d' : nn.Conv2d, #layer from torch.nn
 'VAERB' : VAE_ResidualBlock,
 'VAEA' : VAE_AttentionBlock, #defined in src/modules
@@ -37,6 +38,7 @@ Available layers and their abbreviations:
 'SiLU' : nn.SiLU, #layer from torch.nn
 'MaxP' : nn.MaxPool2d, #layer from torch.nn
 'UpS' : nn.Upsample #layer from torch.nn
+}
                 
 ```
 
