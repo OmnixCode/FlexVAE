@@ -30,25 +30,9 @@ padding=1
 
 <table style="width: 100%; border-collapse: collapse;">
   <tr>
-    <td style="padding: 20px; border: 1px solid #ccc;">
-      <!-- Left Column -->
-      <h2>Left Side</h2>
-      <p>This is the text on the left side.</p>
-      <p>You can write any content you want here.</p>
-    </td>
-    <td style="padding: 20px; border: 1px solid #ccc;">
-      <!-- Right Column -->
-      <h2>Right Side</h2>
-      <p>This is the text on the right side.</p>
-      <p>You can write any content you want here.</p>
-    </td>
-  </tr>
-</table>
-
-<div style="display: flex;">
-  <div style="flex: 1;">
-    <!-- Left Column JSON -->
-    <pre style="padding: 10px; border: 1px solid #ccc; overflow: auto;">
+    <td style="width: 50%; padding: 10px; vertical-align: top;">
+      <!-- Left Column JSON -->
+      <pre style="padding: 10px; border: 1px solid #ccc; overflow: auto;">
 ```json
 [
   "C2d_3_128_3_1_1",
@@ -65,20 +49,24 @@ padding=1
   "C2d_256_8_3_1_1",
   "C2d_8_8_1_1_0"
 ]
+```json
 </pre>
-  </div>
-  <div style="flex: 1;">
-    <!-- Right Column JSON -->
-    <pre style="padding: 10px; border: 1px solid #ccc; overflow: auto;">
+    </td>
+    <td style="width: 50%; padding: 10px; vertical-align: top;">
+      <!-- Right Column JSON -->
+      <pre style="padding: 10px; border: 1px solid #ccc; overflow: auto;">
 ```json
 {
   "key1": "value1",
   "key2": "value2",
   "key3": "value3"
 }
+```json
 </pre>
-  </div>
-</div>
+    </td>
+  </tr>
+</table>
+
 
 
 Our basic encoder model is defined as:
