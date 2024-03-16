@@ -34,6 +34,7 @@ padding=1
       <!-- Left Column JSON -->
       <div class="highlight highlight-source-json">
         <pre>
+<span style='color: blue;'>
 [
   "C2d_3_128_3_1_1",
   "2*VAERB_128_128",
@@ -49,6 +50,7 @@ padding=1
   "C2d_256_8_3_1_1",
   "C2d_8_8_1_1_0"
 ]
+</span>
         </pre>
       </div>
     </td>
@@ -66,6 +68,7 @@ padding=1
     </td>
   </tr>
 </table>
+
 
 
 Our basic encoder model is defined as:
