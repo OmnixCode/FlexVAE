@@ -27,6 +27,9 @@ kernel_size = 3,
 stride=1, 
 padding=1
 ```
+.blue-highlight {
+  color: blue;
+}
 
 <table style="width: 100%; border-collapse: collapse;">
   <tr>
