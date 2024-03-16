@@ -28,6 +28,35 @@ stride=1,
 padding=1
 ```
 
+<style>
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  td {
+    padding: 20px;
+    border: 1px solid #ccc;
+  }
+</style>
+
+<table>
+  <tr>
+    <td>
+      <!-- Left Column -->
+      <h2>Left Side</h2>
+      <p>This is the text on the left side.</p>
+      <p>You can write any content you want here.</p>
+    </td>
+    <td>
+      <!-- Right Column -->
+      <h2>Right Side</h2>
+      <p>This is the text on the right side.</p>
+      <p>You can write any content you want here.</p>
+    </td>
+  </tr>
+</table>
+
+
 Our basic encoder model is defined as:
 
 ```json
