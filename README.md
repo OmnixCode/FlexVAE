@@ -27,13 +27,12 @@ kernel_size = 3,
 stride=1, 
 padding=1
 ```
-
 <div style="display: flex; justify-content: center;">
-  <table style="width: 80%; border-collapse: collapse;">
+  <table style="width: 80%; border-collapse: collapse; display: table;">
     <tr>
-      <td style="width: 50%; padding: 10px; vertical-align: top;">
+      <td style="padding: 10px; vertical-align: top;">
         <!-- Left Column JSON -->
-        <div class="highlight highlight-source-json">
+        <div class="highlight highlight-source-json" style="width: 50%; display: inline-block;">
           <pre>
 {
   "key1": "value1",
@@ -43,9 +42,9 @@ padding=1
           </pre>
         </div>
       </td>
-      <td style="width: 50%; padding: 10px; vertical-align: top;">
+      <td style="padding: 10px; vertical-align: top;">
         <!-- Right Column JSON -->
-        <div class="highlight highlight-source-json">
+        <div class="highlight highlight-source-json" style="width: 50%; display: inline-block;">
           <pre>
 {
   "key4": "value4",
