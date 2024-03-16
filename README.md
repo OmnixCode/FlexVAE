@@ -27,6 +27,8 @@ kernel_size = 3,
 stride=1, 
 padding=1
 ```
+
+
 <table style="width: 100%; border-collapse: collapse;">
   <tr>
     <td style="width: 50%; padding: 10px; vertical-align: top;">
