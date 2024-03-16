@@ -27,10 +27,6 @@ kernel_size = 3,
 stride=1, 
 padding=1
 ```
-.blue-highlight {
-  color: blue;
-}
-
 <table style="width: 100%; border-collapse: collapse;">
   <tr>
     <td style="width: 50%; padding: 10px; vertical-align: top;">
@@ -69,6 +65,13 @@ padding=1
     </td>
   </tr>
 </table>
+
+<style>
+.blue-highlight {
+  color: blue;
+}
+</style>
+
 
 
 
