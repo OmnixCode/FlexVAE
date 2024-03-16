@@ -28,6 +28,17 @@ stride=1,
 padding=1
 ```
 
+Available layers and their abbreviations:
+```
+'C2d' : nn.Conv2d,
+'VAERB' : VAE_ResidualBlock,
+'VAEA' : VAE_AttentionBlock,
+'GN' : nn.GroupNorm,
+'SiLU' : nn.SiLU,
+'MaxP' : nn.MaxPool2d,
+'UpS' : lambda x : nn.Upsample(None,x)
+                
+```
 
 
 
