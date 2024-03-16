@@ -8,21 +8,32 @@
 ## Working principles
 
 ### Autoencoders
-An autoencoder is a type of artificial neural network used for unsupervised learning of efficient data codings. The network aims to learn a compressed representation (encoding) of the input data, often referred to as the latent space, and then reconstruct the original input from this representation (decoding).
+An autoencoder is a type of artificial neural network used for unsupervised learning of efficient data codings. 
+The network aims to learn a compressed representation (encoding) of the input data, often referred to as the latent space, 
+and then reconstruct the original input from this representation (decoding).
 
 Here's a basic description of the autoencoder network:
 
-    Encoder: The encoder part of the network takes the input data and maps it to a lower-dimensional latent space representation. It typically consists of one or more layers of neurons that progressively reduce the dimensionality of the input data. The final layer of the encoder produces the latent representation.
+    Encoder: The encoder part of the network takes the input data and maps it to a lower-dimensional latent space representation. 
+    It typically consists of one or more layers of neurons that progressively reduce the dimensionality of the input data. 
+    The final layer of the encoder produces the latent representation.
 
-    Latent Space: The latent space representation is a compressed form of the input data, capturing its essential features. It's essentially the bottleneck of the autoencoder, where the network aims to learn a compact and meaningful representation.
+    Latent Space: The latent space representation is a compressed form of the input data, capturing its essential features. 
+    It's essentially the bottleneck of the autoencoder, where the network aims to learn a compact and meaningful representation.
 
-    Decoder: The decoder part of the network takes the latent representation and reconstructs the original input data from it. Similar to the encoder, the decoder consists of one or more layers of neurons that progressively upsample the latent representation to match the dimensions of the original input.
+    Decoder: The decoder part of the network takes the latent representation and reconstructs the original input data from it. 
+    Similar to the encoder, the decoder consists of one or more layers of neurons that progressively upsample 
+    the latent representation to match the dimensions of the original input.
 
-    Loss Function: The training objective of the autoencoder is typically to minimize the reconstruction error between the input data and the output of the decoder. Common loss functions used for this purpose include mean squared error (MSE) or binary cross-entropy loss, depending on the nature of the input data.
+    Loss Function: The training objective of the autoencoder is typically to minimize the reconstruction error between the input data and the output of the decoder. 
+    Common loss functions used for this purpose include mean squared error (MSE) or binary cross-entropy loss, depending on the nature of the input data.
 
-    Training: The autoencoder is trained using backpropagation and gradient descent-based optimization algorithms. During training, the encoder and decoder parameters are updated iteratively to minimize the reconstruction error on a training dataset.
+    Training: The autoencoder is trained using backpropagation and gradient descent-based optimization algorithms. 
+    During training, the encoder and decoder parameters are updated iteratively to minimize the reconstruction error on a training dataset.
 
-Autoencoders are capable of learning efficient representations of data and can be used for various tasks such as data denoising, dimensionality reduction, and generative modeling. Variants of autoencoders include denoising autoencoders, sparse autoencoders, and variational autoencoders, each tailored for specific applications or constraints.
+Autoencoders are capable of learning efficient representations of data and can be used for various tasks such as data denoising, 
+dimensionality reduction, and generative modeling. Variants of autoencoders include denoising autoencoders, sparse autoencoders, 
+and variational autoencoders, each tailored for specific applications or constraints.
 
 
 ### Variational Autoencoders
