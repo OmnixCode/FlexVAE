@@ -52,5 +52,10 @@ We can also visualise its structure:
 ![Example structure of VAE encoder](/assets/encod.png)
 
 ### Loss functions
+
+Loss function for the the model is expressed as 
+$$loss = alpha*recons_loss + ssim_metrics * beta * (1-ssim_loss) + kld_weight * kld_loss + sparse_metrics*sparse_loss$$
+
+
 ## How to use
 $$\left( \sum_{k=1}^n a_k b_k \right)^2 \leq \left( \sum_{k=1}^n a_k^2 \right) \left( \sum_{k=1}^n b_k^2 \right)$$
