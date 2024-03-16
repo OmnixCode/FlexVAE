@@ -28,33 +28,10 @@ stride=1,
 padding=1
 ```
 
-
 <table style="width: 100%; border-collapse: collapse;">
   <tr>
     <td style="width: 50%; padding: 10px; vertical-align: top;">
       <!-- Left Column JSON -->
-      <div class="highlight highlight-source-json">
-        <pre>
-[
-  "C2d_3_128_3_1_1",
-  "2*VAERB_128_128",
-  "C2d_128_128_3_4_0",
-  <pre class="blue-highlight">"VAERB_128_256",</pre>
-  <pre class="blue-highlight">"VAERB_256_256",</pre>
-  "C2d_256_256_3_4_0",
-  <pre class="blue-highlight">"3*VAERB_256_256",</pre>
-  "VAEA_256",
-  "VAERB_256_256",
-  "GN_32_256",
-  "SiLU",
-  "C2d_256_8_3_1_1",
-  "C2d_8_8_1_1_0"
-]
-        </pre>
-      </div>
-    </td>
-    <td style="width: 50%; padding: 10px; vertical-align: top;">
-      <!-- Right Column JSON -->
       <div class="highlight highlight-source-json">
         <pre>
 {
@@ -65,14 +42,21 @@ padding=1
         </pre>
       </div>
     </td>
+    <td style="width: 50%; padding: 10px; vertical-align: top;">
+      <!-- Right Column JSON -->
+      <div class="highlight highlight-source-json">
+        <pre>
+{
+  "key4": "value4",
+  "key5": "value5",
+  "key6": "value6"
+}
+        </pre>
+      </div>
+    </td>
   </tr>
 </table>
 
-<style>
-.blue-highlight {
-  color: blue;
-}
-</style>
 
 
 
