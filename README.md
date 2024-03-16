@@ -27,7 +27,8 @@ kernel_size = 3,
 stride=1, 
 padding=1
 ```
-<div style="display: flex; min-width: 400px;">
+
+<div style="display: flex; min-width: 600px;">
   <div style="flex: 1;">
     <!-- Left Column JSON -->
     <div class="highlight highlight-source-json">
