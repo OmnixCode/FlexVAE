@@ -54,7 +54,7 @@ We can also visualise its structure:
 ### Loss functions
 
 Loss function for the the model is expressed as 
-$$loss = alpha*recons_loss + ssim_metrics * beta * (1-ssim_loss) + kld_weight * kld_loss + sparse_metrics*sparse_loss$$
+$$L_{total} = \alpha * L_{reconstruction} + ssim_metrics * \beta * (1-L_{ssim}) + kld_weight * L_{KLD} + sparse_metrics*L_{sparse} $$
 
 
 ## How to use
