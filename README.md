@@ -28,34 +28,32 @@ stride=1,
 padding=1
 ```
 
-<table style="width: 100%; border-collapse: collapse;">
-  <tr>
-    <td style="width: 50%; padding: 10px; vertical-align: top;">
-      <!-- Left Column JSON -->
-      <div class="highlight highlight-source-json">
-        <pre>
+<div style="display: flex;">
+  <div style="flex: 1;">
+    <!-- Left Column JSON -->
+    <div class="highlight highlight-source-json">
+      <pre>
 {
   "key1": "value1",
   "key2": "value2",
   "key3": "value3"
 }
-        </pre>
-      </div>
-    </td>
-    <td style="width: 50%; padding: 10px; vertical-align: top;">
-      <!-- Right Column JSON -->
-      <div class="highlight highlight-source-json">
-        <pre>
+      </pre>
+    </div>
+  </div>
+  <div style="flex: 1;">
+    <!-- Right Column JSON -->
+    <div class="highlight highlight-source-json">
+      <pre>
 {
   "key4": "value4",
   "key5": "value5",
   "key6": "value6"
 }
-        </pre>
-      </div>
-    </td>
-  </tr>
-</table>
+      </pre>
+    </div>
+  </div>
+</div>
 
 
 
