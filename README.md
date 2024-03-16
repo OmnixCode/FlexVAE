@@ -32,7 +32,7 @@ Available layers and their abbreviations:
 ```python
 {
 'C2d' : nn.Conv2d, #layer from torch.nn
-'VAERB' : VAE_ResidualBlock,
+'VAERB' : VAE_ResidualBlock, #defined in src/modules
 'VAEA' : VAE_AttentionBlock, #defined in src/modules
 'GN' : nn.GroupNorm, #layer from torch.nn
 'SiLU' : nn.SiLU, #layer from torch.nn
