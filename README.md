@@ -149,7 +149,8 @@ Available modes are:
 ![Original images of the natural scenery to be fed to the network](/assets/nature.jpg)
 
 <p align="center">
-    <img width="600" src="/assets/nature_reconstructed.jpg" alt="Material Bread logo">
+  // Reconstructed image
+    <img width="800" src="/assets/nature_reconstructed.jpg" alt="Material Bread logo">
 </p>
 
-![Reconstructed images of the natural scenery](/assets/nature_reconstructed.jpg)
+
