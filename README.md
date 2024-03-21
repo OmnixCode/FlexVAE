@@ -138,7 +138,7 @@ This is internaly converted to 0 or 1 and this effectively turns off or on the S
 ### Configuration modes
 Model configuration file is present in /configs/config.cfg file. Here we can adjust all the input, output and training parameters.
 
-```json
+```
 `Link to JSON file` (configs/config.cfg)
 
 
