@@ -149,4 +149,5 @@ Available modes are:
 ![Original images of the natural scenery to be fed to the network](/assets/nature.jpg)
 
 <center>This text is centered.</center>
+
 ![Reconstructed images of the natural scenery](/assets/nature_reconstructed.jpg)
