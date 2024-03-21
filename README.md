@@ -140,11 +140,11 @@ To run the model run the train.py script as:
 python3 ./train.py [mode]
 ```
 Available modes are:
-**-h** help
-**-t** train
-**-i** inference (full pass through the VAE network (encoder + decoder))
-**-e** encode (encode the images from the folder into latent representation)
-**-mem** estimate the maximum batch size for training 
+**-h** help <br />
+**-t** train <br />
+**-i** inference (full pass through the VAE network (encoder + decoder)) <br />
+**-e** encode (encode the images from the folder into latent representation) <br />
+**-mem** estimate the maximum batch size for training  <br />
 
 ![Original images of the natural scenery to be fed to the network](/assets/nature.jpg)
 
