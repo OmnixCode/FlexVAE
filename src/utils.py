@@ -94,6 +94,23 @@ def load_image(image_path, args):
 
     return tensor_image
 
+def load_image2(image_path):
+    # Define a transformation to be applied to the image
+    transform = transforms.Compose([
+        torchvision.transforms.ToTensor()
+    ])
+
+    # Open the image using PIL (Python Imaging Library)
+    image = Image.open(image_path) # Ensure that the image is in RGB format
+
+    # Apply the transformation to the image
+    tensor_image = transform(image)
+
+    # Add an extra dimension to the tensor (batch dimension)
+    tensor_image = tensor_image.unsqueeze(0)
+
+    return tensor_image
+
 def check_nan_inf(value, name="Value"):
     """
     This function is self-explanatory.
@@ -214,4 +231,19 @@ class GPU_thread:
         predicted_image = model(images)
         entry ={self.id : predicted_image}
         self.result_queue.put(entry)
-            
+ 
+class Configs:
+    def __init__(self, init_dict={}):
+            self._variables = init_dict
+
+    def __getattr__(self, name):
+        if name in self._variables:
+            return self._variables[name]
+        else:
+            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
+
+    def __setattr__(self, name, value):
+        if name != '_variables':
+            self._variables[name] = value
+        else:
+            super().__setattr__(name, value)           

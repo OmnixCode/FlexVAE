@@ -7,7 +7,7 @@ Created on Sun Nov 12 14:40:59 2023
 """
 import os, sys
 
-os.chdir("/home/filipk/Desktop/VAE_recon/")
+os.chdir("/home/filipk/Desktop/Python Projects/FlexVAE/")
 sys.path.append('src/') #adds the src folder to lib path
 
 
@@ -33,6 +33,7 @@ from utils import get_data, save_images, load_image, check_nan_inf, check_parame
 from utils import setup_logging
 from utils import GPU_thread
 from utils import load_model_checkpoint
+from utils import Configs
 import gc #garbage collector
 
 from collections import OrderedDict
@@ -126,16 +127,40 @@ from queue import Queue
 result_queues = Queue()
 
 
+import signal
+# Define pbar globally
+pbar = None
+resize_triggered = False
+
+
+def clear_terminal():
+    # Clear the entire terminal window
+    os.system('cls' if os.name == 'nt' else 'clear')
+
+def handle_resize(signal, frame):
+    global pbar, resize_triggered
+    # Check if resize has already been triggered
+    if not resize_triggered:
+        # Set flag to indicate resize has been triggered
+        resize_triggered = False
+        # Clear the entire terminal window
+        clear_terminal()
+        # Redraw tqdm progress bar
+        if pbar:
+            pprint.pprint(config.__dict__) #print config file with settings
+            print('\n')
+            pbar.refresh()
 
 
 
-
+signal.signal(signal.SIGWINCH, handle_resize)
 #epoch1104 promena padda
 #import copy
 
 def train(args): 
+    global pbar, resize_triggered
     pprint.pprint(args.__dict__) #print config file with settings
-    
+    print('\n')
     setup_logging(args.run_name)
     #device=args.device
     dataloader = get_data(args)
@@ -184,8 +209,9 @@ def train(args):
         
         logging.info(f"Starting epoch {epoch}:")
         
-        
-        pbar = tqdm(dataloader)    
+        #custom_bar_format = "{l_bar}{bar} | {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]"
+
+        pbar = tqdm(dataloader,file=sys.stdout, leave=True, dynamic_ncols=True, smoothing=0, disable=False, position=start_epoch-epoch)    
         total=0
         rec_loss=0
         kld_loss=0
@@ -198,6 +224,10 @@ def train(args):
                     "SSIM_Loss" : simm_loss
                     }
         
+
+
+
+
         
         for batch_idx, (images, _) in enumerate(pbar):
             
@@ -358,22 +388,29 @@ def train(args):
 Argument definitions and other options
 """
         
-parser = argparse.ArgumentParser()
-args = parser.parse_args()
+# =============================================================================
+# parser = argparse.ArgumentParser()
+# args = parser.parse_args()
+# 
+# import json
+# PATH_CFG = 'configs/config.cfg'
+# with open(PATH_CFG, 'r') as f:
+#     args.__dict__=json.load(f)
+# =============================================================================
 
-import json
+
+import json 
 PATH_CFG = 'configs/config.cfg'
 with open(PATH_CFG, 'r') as f:
-    args.__dict__=json.load(f)
-
+    config=Configs(json.load(f))
 
 
 import glob
-if args.resume == True:
-    if args.load_backup == False:
-        args.resume_path = glob.glob(args.base_path + args.run_name+'/*.pt', recursive=False)[0]
+if config.resume == True:
+    if config.load_backup == False:
+        config.resume_path = glob.glob(config.base_path + config.run_name+'/*.pt', recursive=False)[0]
     else:
-        args.resume_path = glob.glob(args.base_path + args.backup_name+'/*.pt', recursive=False)[0]
+        config.resume_path = glob.glob(config.base_path + config.backup_name+'/*.pt', recursive=False)[0]
 
 
     
@@ -397,24 +434,18 @@ def sample_on_device(location, epoch, args, rate=5, device='cpu'):
         model.eval()
         with torch.no_grad():
             ckpt = torch.load(location)
+            model.load_state_dict(ckpt['model_state_dict']) #this was missing
             images =model.sample2(24,32)
             save_images(images.detach(), os.path.join("samples", args.run_name, f"{epoch}_orig.jpg"))
 
 
 
 
-# =============================================================================
-# pic1=load_image("/home/filipk/Desktop/nature_pics/sea_selection/00000000_(2).jpg")
-# 
-# save_images(pic1.detach(), "/home/filipk/Desktop/res.jpg")
-# 
-# =============================================================================
-
 import os
 from PIL import Image
 from torchvision import transforms
-infer =0
-if infer ==1:
+
+def encode_from_folder(args):
     device = "cuda"
     #model = VAE(encoder.VAE_Encoder, decoder.VAE_Decoder, args).to(device)
     model = VAE(VAE_Encoder, VAE_Decoder, args).to(device)
@@ -474,6 +505,17 @@ if infer ==1:
                 
                 print(f"Image saved at {output_path}")
 
+
+
+# =============================================================================
+# pic1=load_image("/home/filipk/Desktop/nature_pics/sea_selection/00000000_(2).jpg")
+# 
+# save_images(pic1.detach(), "/home/filipk/Desktop/res.jpg")
+# 
+# =============================================================================
+
+
+
         
         
         
@@ -513,22 +555,7 @@ if infer ==1:
 
 
 
-def load_image2(image_path):
-    # Define a transformation to be applied to the image
-    transform = transforms.Compose([
-        torchvision.transforms.ToTensor()
-    ])
 
-    # Open the image using PIL (Python Imaging Library)
-    image = Image.open(image_path) # Ensure that the image is in RGB format
-
-    # Apply the transformation to the image
-    tensor_image = transform(image)
-
-    # Add an extra dimension to the tensor (batch dimension)
-    tensor_image = tensor_image.unsqueeze(0)
-
-    return tensor_image
 
 # =============================================================================
 # for n in range(10):
@@ -651,3 +678,142 @@ if infer ==1:
             #pil_image.save(output_path)
             
             print(f"Image saved at {output_path}")
+
+
+
+def estimate_max_batch_size(input_shape=(3,64,64), device='cuda:1', max_memory_usage=0.9):
+    batch_size = 1
+    while True:
+        try:
+            model = VAE(VAE_Encoder, VAE_Decoder, config).to(device)
+            inputs = torch.randn((batch_size,) + input_shape).to(device)
+            _ = model(inputs)
+            batch_size +=1
+            print(batch_size)
+            del model
+            del inputs
+            gc.collect()
+            torch.cuda.empty_cache()
+        except RuntimeError as e:
+            print(f"RuntimeError: {e}")
+            print(f"Maximum batch size that fits in memory: {batch_size -1 }")
+            del model
+            del inputs
+# =============================================================================
+#             del model
+#             gc.collect()
+#             torch.cuda.empty_cache()
+# =============================================================================
+            inputs=None
+            model=None
+            return batch_size -1
+            break
+
+            
+    gc.collect()
+    torch.cuda.empty_cache()   
+
+def test_limit():
+    try:
+        mem1=estimate_max_batch_size(input_shape=(3,64,64), device='cuda:0')
+        mem2=estimate_max_batch_size(input_shape=(3,64,64), device='cuda:1')
+    except:
+        print('Something is wrong')
+    finally:
+        print("gooog")
+        print(mem1)
+        print(mem2)
+        gc.collect()
+        torch.cuda.empty_cache()     
+    return mem1+mem2
+        
+
+            
+            
+def is_running_in_spyder():
+    """Check if the script is running in Spyder or command line."""
+    try:
+        if 'spyder' in sys.modules:
+            return True
+        elif 'IPython' in sys.modules and 'spyder' in sys.modules['IPython'].get_ipython().config['KernelApp']['connection_file']:
+            return True
+    except Exception:
+        pass
+    return False          
+
+
+def exclusive_flags(parser, flags):
+    """
+    Validate that only one of the specified flags is set.
+    """
+    count = sum(1 for flag in flags if getattr(parser, flag))
+    if count != 1:
+        raise argparse.ArgumentError(None, "Exactly one of {} must be set.".format(', '.join(flags)))
+
+
+
+if __name__ == "__main__":
+    if is_running_in_spyder():
+        print("Running in Spyder")
+        #add way to input the parameters from the window
+    else:
+        os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:100"
+        print("Running from the command line")
+        # Create ArgumentParser object
+        parser = argparse.ArgumentParser(description='FlexVae model')
+        
+        # Add positional arguments
+        parser.add_argument('-mem', '--flag_mem', action='store_true', help='Check the memmory limits for batch -mem')
+        parser.add_argument('-t', '--flag_t', action='store_true', help='Train the model -t')
+        parser.add_argument('-i', '--flag_i', action='store_true', help='Infer from the model (full VAE passthrough) -i')
+        parser.add_argument('-e', '--flag_e', action='store_true', help='Encode the images in the latent space -e')
+        parser.add_argument('opt_pos_arg', type=int, nargs='?', default=None, help='An optional integer positional argument')
+
+        args = parser.parse_args()
+        exclusive_flags(args, ['flag_t', 'flag_i', 'flag_e'])
+        # Print the argument values
+        # Access the flags
+        if args.flag_mem:
+            print("-mem flag is set")
+        if args.flag_t:
+            print("-t flag is set")
+        if args.flag_i:
+            print("-i flag is set")
+        if args.flag_e:
+            print("-e flag is set")
+
+        print("Argument values:")
+        #  print(args.mode)
+        print(args.opt_pos_arg)
+        
+        if args.flag_mem:
+           config.batch_size=test_limit()
+        if args.flag_t:
+            train(config)
+        if args.flag_i:
+            pass
+        if args.flag_e:
+            pass
+        
+        
+            
+# =============================================================================
+# if __name__ == "__main__":
+#     
+#     # Create ArgumentParser object
+#     parser2 = argparse.ArgumentParser(description='Description of your script')
+# 
+#     # Add positional arguments
+#     parser2.add_argument('pos_arg', type=int, help='A required integer positional argument')
+#     parser2.add_argument('opt_pos_arg', type=int, nargs='?', default=None, help='An optional integer positional argument')
+# 
+#     # Parse the arguments
+#     args2 = parser2.parse_args()
+# 
+#     # Print the argument values
+#     print("Argument values:")
+#     print(args2.pos_arg)
+#     print(args2.opt_pos_arg)
+# 
+# =============================================================================
+            

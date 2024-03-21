@@ -11,6 +11,17 @@ Created on Tue Dec 26 15:53:04 2023
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 infer =0
 if infer ==1:
     device = "cuda"
