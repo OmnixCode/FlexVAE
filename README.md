@@ -134,4 +134,18 @@ This is internaly converted to 0 or 1 and this effectively turns off or on the S
 
 
 ## How to use
+Model configuration file is present in /configs/config.cfg file. Here we can adjust all the input, output and training parameters.
+To run the model run the train.py script as:
+```
+python3 ./train.py [mode]
+```
+Available modes are:
+**-h** help
+**-t** train
+**-i** inference (full pass through the VAE network (encoder + decoder))
+**-e** encode (encode the images from the folder into latent representation)
+**-mem** estimate the maximum batch size for training 
 
+![Original images of the natural scenery to be fed to the network](/assets/nature.jpg)
+
+![Reconstructed images of the natural scenery](/assets/nature_reconstructed.jpg)
