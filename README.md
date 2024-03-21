@@ -140,7 +140,7 @@ Model configuration file is present in /configs/config.cfg file. Here we can adj
 
 ```
 `Link to JSON file` (configs/config.cfg)
-
+```
 
 
 ### Basic modes
