@@ -134,6 +134,8 @@ This is internaly converted to 0 or 1 and this effectively turns off or on the S
 
 
 ## How to use
+
+### Basic modes
 Model configuration file is present in /configs/config.cfg file. Here we can adjust all the input, output and training parameters.
 To run the model run the train.py script as:
 ```
