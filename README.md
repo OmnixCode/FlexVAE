@@ -153,4 +153,11 @@ Available modes are:
     <img width="800" src="/assets/nature_reconstructed.jpg" alt="Material Bread logo">
 </p>
 
+<p align="center">
+    <img width="200" src="/assets/nature_reconstructed.jpg" alt="Material Bread logo">
+    <br> <!-- Optional line break for better separation -->
+    This is the Material Bread logo <!-- Description for the image -->
+</p>
+
+
 
