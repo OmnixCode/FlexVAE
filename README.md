@@ -138,8 +138,34 @@ This is internaly converted to 0 or 1 and this effectively turns off or on the S
 ### Configuration modes
 Model configuration file is present in /configs/config.cfg file. Here we can adjust all the input, output and training parameters.
 
-```
-`Link to JSON file` (configs/config.cfg)
+```json
+{
+  "base_path": "/home/filipk/Desktop/Python Projects/FlexVAE/models/",
+  "run_name": "VAE_returnto256_square_to16x16",
+  "load_backup": false,
+  "backup_name": "VAE_returnto128_nodrop_16space (copy)",
+  "backup_every_n_iter": 50,
+  "sample_every_n_iter": 10,
+  "lat_size": 16,
+  "epochs": 1000,
+  "batch_size": 100,
+  "batch_accum": 3,
+  "image_size": 64,
+  "dataset_path": "/home/filipk/Desktop/TRAIN",
+  "device": "cuda",
+  "lr": 0.0004,
+  "resume": false,
+  "reinit_optim": false,
+  "use_scheduler": true,
+  "ReduceLROnPlateau": false,
+  "useEMA": false,
+  "weight_decay": 0.01,
+  "latent_conversion_disable": true,
+  "multi_GPU": true,
+  "decoder_struct" : "VAE_decoder",
+  "encoder_struct" : "VAE_encoder"
+  
+}
 ```
 
 
