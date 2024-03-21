@@ -146,8 +146,12 @@ Available modes are:
 **-e** encode (encode the images from the folder into latent representation) <br />
 **-mem** estimate the maximum batch size for training  <br />
 
-![Original images of the natural scenery to be fed to the network](/assets/nature.jpg)
 
+<p align="center">
+    <img width="800" src="/assets/nature.jpg" alt="VAE reconstruction">
+    <br> <!-- Optional line break for better separation -->
+    Original images of the natural scenery to be fed to the network <!-- Description for the image -->
+</p>
 
 
 <p align="center">
