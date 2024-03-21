@@ -148,4 +148,4 @@ Available modes are:
 
 ![Original images of the natural scenery to be fed to the network](/assets/nature.jpg)
 
-![Reconstructed images of the natural scenery](/assets/nature_reconstructed.jpg)
+[Reconstructed images of the natural scenery](/assets/nature_reconstructed.jpg)
