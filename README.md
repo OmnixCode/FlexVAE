@@ -146,29 +146,12 @@ Available modes are:
 **-e** encode (encode the images from the folder into latent representation) <br />
 **-mem** estimate the maximum batch size for training  <br />
 
-<div style="display: flex; flex-direction: column;">
-  <div style="display: flex;">
-    <div style="min-width: 30px;">-h</div>
-    <div>help</div>
-  </div>
-  <div style="display: flex;">
-    <div style="min-width: 30px;">-t</div>
-    <div>train</div>
-  </div>
-  <div style="display: flex;">
-    <div style="min-width: 30px;">-i</div>
-    <div>inference (full pass through the VAE network (encoder + decoder))</div>
-  </div>
-  <div style="display: flex;">
-    <div style="min-width: 30px;">-e</div>
-    <div>encode (encode the images from the folder into latent representation)</div>
-  </div>
-  <div style="display: flex;">
-    <div style="min-width: 30px;">-mem</div>
-    <div>estimate the maximum batch size for training</div>
-  </div>
-</div>
-
+Available modes are:
+**-h**&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;help <br />
+**-t**&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;train <br />
+**-i**&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;inference (full pass through the VAE network (encoder + decoder)) <br />
+**-e**&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;encode (encode the images from the folder into latent representation) <br />
+**-mem** estimate the maximum batch size for training  <br />
 
 <p align="center">
     <img width="800" src="/assets/nature.jpg" alt="VAE reconstruction">
