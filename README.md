@@ -37,7 +37,8 @@ and variational autoencoders, each tailored for specific applications or constra
 
 
 ### Variational Autoencoders
-
+Compared to regular autoencoders, variational autoencders introduce additional loss term that forces the latent space to have standard normal distribution (normal distribution wiht zero mean and variance of 1).
+Instead of the direct passing of the latent space variable from the encoder to the decoder, we first calculate mean and the variance of this variable. Afterwards, we randomly sample latent tensor (vector) from the distribution with this mean and variance and pass it to the decoder. To estimate how different is this distribution to the normal distribution we use [KL divergence]([https://pages.github.com/](https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence)).
 
 ## Implementation choices
 ### Model definition
