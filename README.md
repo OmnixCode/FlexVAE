@@ -150,6 +150,8 @@ Available modes are:
 
 <p align="center">
 // Your content
+  
+  ![Original images of the natural scenery to be fed to the network](/assets/nature.jpg)
 </p>
 
 ![Reconstructed images of the natural scenery](/assets/nature_reconstructed.jpg)
