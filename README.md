@@ -151,7 +151,7 @@ Available modes are:
 **-t**&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;train <br />
 **-i**&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;inference (full pass through the VAE network (encoder + decoder)) <br />
 **-e**&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;encode (encode the images from the folder into latent representation) <br />
-**-mem** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; estimate the maximum batch size for training  <br />
+**-mem** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; estimate the maximum batch size for training  <br />
 
 <p align="center">
     <img width="800" src="/assets/nature.jpg" alt="VAE reconstruction">
