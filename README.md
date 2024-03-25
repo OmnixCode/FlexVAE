@@ -1,5 +1,6 @@
 # Flexible Variational Autoencoder (VAE) 
 ## To Do:
+- [ ] Add metrics and comparisons chapter
 - [ ] Add more layers to chose from when compiling the structure of encoder and decoder
 - [ ] Add latent spaces quantization
 - [ ] Add intermidiate layer quantization
