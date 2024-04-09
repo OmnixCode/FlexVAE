@@ -247,3 +247,7 @@ class Configs:
             self._variables[name] = value
         else:
             super().__setattr__(name, value)           
+     
+            
+     
+

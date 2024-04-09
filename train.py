@@ -17,7 +17,7 @@ import torch
 from torch import nn
 from torch import optim
 from torch.nn import functional as F 
-from torch.profiler import profile, record_function, ProfilerActivity
+#from torch.profiler import profile, record_function, ProfilerActivity
 
 import argparse
 
@@ -34,6 +34,8 @@ from utils import setup_logging
 from utils import GPU_thread
 from utils import load_model_checkpoint
 from utils import Configs
+from inference_eval import encode_from_folder
+
 import gc #garbage collector
 
 from collections import OrderedDict
@@ -193,7 +195,7 @@ def train(args):
     if args.resume == True:
         models[0], optimizer, loss, start_epoch, kld_mult = load_model_checkpoint(models[0], optimizer, args.resume_path)
         if args.reinit_optim == True:
-            optimizer = optim.AdamW(models[0].parameters(), lr = 1e-5)
+            optimizer = optim.AdamW(models[0].parameters(), lr = 3e-4)
         #optimizer = optim.NAdam(model.parameters(), lr = 2e-4)
 
     if args.useEMA == True:
@@ -445,65 +447,7 @@ import os
 from PIL import Image
 from torchvision import transforms
 
-def encode_from_folder(args):
-    device = "cuda"
-    #model = VAE(encoder.VAE_Encoder, decoder.VAE_Decoder, args).to(device)
-    model = VAE(VAE_Encoder, VAE_Decoder, args).to(device)
-    model.eval()   
-    with torch.no_grad():
-        ckpt = torch.load(args.resume_path)
-        model.load_state_dict(ckpt['model_state_dict'])
-        
-        folder_path = "/home/filipk/Desktop/TRAIN/nature/"
-        
-        folder_path_base = "/home/filipk/Desktop/TRAIN/"
-        paths=[x[1] for x in os.walk(folder_path_base)]
-        
-        
-        for path in paths[0]:
-            folder_path=folder_path_base+path
-            # Get a list of all files in the folder
-            files = os.listdir(folder_path)
-            
-            # Filter out only image files
-            image_files = [file for file in files if file.endswith(('.png', '.jpg', '.jpeg', '.gif'))]
-            
-            # Loop through the image files
-            for image_file in image_files:
-                # Get the full path of the image
-                image_path = os.path.join(folder_path, image_file)
-            
-                # Open the image using Pillow
-                #image = Image.open(image_path)
-                image_tensor = load_image(image_path,args).to(torch.device('cuda:0'))
-                
-                # Do something with the image (e.g., display, process, etc.)
-                latent = model.encode(image_tensor)
-                latent = latent.squeeze(0)
-                # Get the name of the image
-                image_name = os.path.splitext(image_file)[0]
-            
-                # Print the image name
-                #print("Image Name:", image_name)
-                
-                # Assuming your image is a torch tensor
-                #your_tensor_image = latent  # Replace this with your actual tensor
-                
-                # Convert the tensor to a PIL Image
-    # =============================================================================
-    #             to_pil = transforms.ToPILImage()
-    #             pil_image = to_pil(your_tensor_image)
-    #             
-    # =============================================================================
-                # Save the PIL Image to a file
-                #output_path = "/home/filipk/Desktop/Train_latent/Nature/"+ image_name+'.png'  # Change the path and filename as needed
-                
-                os.makedirs("/home/filipk/Desktop/Train_latent/Nature_tensors3/"+path, exist_ok=True)
-                output_path = "/home/filipk/Desktop/Train_latent/Nature_tensors3/"+path+"/"+ image_name+'.pt'  # Change the path and filename as needed
-                torch.save(latent, output_path)
-                #pil_image.save(output_path)
-                
-                print(f"Image saved at {output_path}")
+
 
 
 
@@ -572,8 +516,11 @@ def encode_from_folder(args):
 #         img_dec=model.decoder(a.to(torch.device('cuda:0')))
 #         save_images(img_dec.detach(),"/home/filipk/Desktop/Train_latent/output/res"+ str(n) +".jpg")
 # =============================================================================
-from_diffusion=False
-if from_diffusion==True:
+# =============================================================================
+# from_diffusion=False
+# if from_diffusion==True:
+# =============================================================================
+def decode_from_diffusion(args, model):
     device = "cuda"
     model = VAE(VAE_Encoder, VAE_Decoder, args).to(device)
     model.eval()   
@@ -715,8 +662,8 @@ def estimate_max_batch_size(input_shape=(3,64,64), device='cuda:1', max_memory_u
 
 def test_limit():
     try:
-        mem1=estimate_max_batch_size(input_shape=(3,64,64), device='cuda:0')
-        mem2=estimate_max_batch_size(input_shape=(3,64,64), device='cuda:1')
+        mem1=estimate_max_batch_size(input_shape=(3,config.image_size,config.image_size), device='cuda:0')
+        mem2=estimate_max_batch_size(input_shape=(3,config.image_size,config.image_size), device='cuda:1')
     except:
         print('Something is wrong')
     finally:
@@ -793,6 +740,7 @@ if __name__ == "__main__":
         if args.flag_i:
             pass
         if args.flag_e:
+            encode_from_folder(config,VAE)
             pass
         
         
