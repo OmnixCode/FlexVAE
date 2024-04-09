@@ -34,7 +34,7 @@ from utils import setup_logging
 from utils import GPU_thread
 from utils import load_model_checkpoint
 from utils import Configs
-from inference_eval import encode_from_folder
+from inference_eval import encode_from_folder, decode_from_diffusion
 
 import gc #garbage collector
 
@@ -520,48 +520,7 @@ from torchvision import transforms
 # from_diffusion=False
 # if from_diffusion==True:
 # =============================================================================
-def decode_from_diffusion(args, model):
-    device = "cuda"
-    model = VAE(VAE_Encoder, VAE_Decoder, args).to(device)
-    model.eval()   
-    with torch.no_grad():
-        args.resume_path = glob.glob(args.base_path + "VAE_returnto256_square_to16x16"+'/*.pt', recursive=False)[0]
-        ckpt = torch.load(args.resume_path)
-        model.load_state_dict(ckpt['model_state_dict'])
-        #x=load_image("/home/filipk/Desktop/TRAIN/archive(2)/00000000_(2).jpg", args)
-        #enc=model.encoder(x.to(torch.device('cuda:0')))
-        
-        
-        #Save tensor
-        #output_path = "/home/filipk/Desktop/Train_latent/test/"+ "image_name"+'.pt' 
-        #torch.save(enc, output_path)
-    
-        # Load the tensor back
-        for i in range(200):
-            output_path = "/home/filipk/Desktop/Train_latent/create3/"+ str(i)+'.pt'
-            loaded_tensor = torch.load(output_path).unsqueeze(0)
-            dec=model.decoder(loaded_tensor.to(torch.device('cuda:0')))
-            
-        # =============================================================================
-        #     enc2=enc.squeeze(0)
-        #     
-        #     to_pil = transforms.ToPILImage()
-        #     pil_image = to_pil(enc2)
-        # =============================================================================
-                    
-        # =============================================================================
-        #     # Save the PIL Image to a file
-        #     output_path = "/home/filipk/Desktop/Train_latent/test/"+ "image_name"+'.png'  # Change the path and filename as needed
-        #     pil_image.save(output_path)
-        #     
-        #     enc3=load_image2("/home/filipk/Desktop/Train_latent/test/"+ "image_name"+'.png')
-        #     
-        #     dec=model.decoder(enc3.to(torch.device('cuda:0')))
-        # =============================================================================
-            
-            
-            
-            save_images(dec.detach(),"/home/filipk/Desktop/Train_latent/output5/res"+ str(i) +".jpg")
+
     
 # =============================================================================
 # print("enc:", enc2)
@@ -574,57 +533,7 @@ def decode_from_diffusion(args, model):
 import os
 from PIL import Image
 from torchvision import transforms
-infer =0
-if infer ==1:
-    device = "cuda"
-    model = VAE(VAE_Encoder, VAE_Decoder, args).to(device)
-    model.eval()   
-    with torch.no_grad():
-        ckpt = torch.load(args.resume_path)
-        model.load_state_dict(ckpt['model_state_dict'])
-        
-        folder_path = "/home/filipk/Desktop/TRAIN/nature/"
 
-        # Get a list of all files in the folder
-        files = os.listdir(folder_path)
-        
-        # Filter out only image files
-        image_files = [file for file in files if file.endswith(('.png', '.jpg', '.jpeg', '.gif'))]
-        
-        # Loop through the image files
-        for image_file in image_files:
-            # Get the full path of the image
-            image_path = os.path.join(folder_path, image_file)
-        
-            # Open the image using Pillow
-            #image = Image.open(image_path)
-            image_tensor = load_image(image_path,args).to(torch.device('cuda:0'))
-            
-            # Do something with the image (e.g., display, process, etc.)
-            latent = model.encode(image_tensor)
-            latent = latent.squeeze(0)
-            # Get the name of the image
-            image_name = os.path.splitext(image_file)[0]
-        
-            # Print the image name
-            #print("Image Name:", image_name)
-            
-            # Assuming your image is a torch tensor
-            #your_tensor_image = latent  # Replace this with your actual tensor
-            
-            # Convert the tensor to a PIL Image
-# =============================================================================
-#             to_pil = transforms.ToPILImage()
-#             pil_image = to_pil(your_tensor_image)
-#             
-# =============================================================================
-            # Save the PIL Image to a file
-            #output_path = "/home/filipk/Desktop/Train_latent/Nature/"+ image_name+'.png'  # Change the path and filename as needed
-            output_path = "/home/filipk/Desktop/Train_latent/Nature_tensors4/"+ image_name+'.pt'  # Change the path and filename as needed
-            torch.save(latent, output_path)
-            #pil_image.save(output_path)
-            
-            print(f"Image saved at {output_path}")
 
 
 
@@ -714,6 +623,7 @@ if __name__ == "__main__":
         parser.add_argument('-t', '--flag_t', action='store_true', help='Train the model -t')
         parser.add_argument('-i', '--flag_i', action='store_true', help='Infer from the model (full VAE passthrough) -i')
         parser.add_argument('-e', '--flag_e', action='store_true', help='Encode the images in the latent space -e')
+        parser.add_argument('-d', '--flag_d', action='store_true', help='Decode the images from the latent space -d')
         parser.add_argument('opt_pos_arg', type=int, nargs='?', default=None, help='An optional integer positional argument')
 
         args = parser.parse_args()
@@ -728,6 +638,8 @@ if __name__ == "__main__":
             print("-i flag is set")
         if args.flag_e:
             print("-e flag is set")
+            if args.flag_e:
+                print("-d flag is set")
 
         print("Argument values:")
         #  print(args.mode)
@@ -742,26 +654,10 @@ if __name__ == "__main__":
         if args.flag_e:
             encode_from_folder(config,VAE)
             pass
-        
+        if args.flag_d:
+            decode_from_diffusion(config, VAE)
+            pass
         
             
-# =============================================================================
-# if __name__ == "__main__":
-#     
-#     # Create ArgumentParser object
-#     parser2 = argparse.ArgumentParser(description='Description of your script')
-# 
-#     # Add positional arguments
-#     parser2.add_argument('pos_arg', type=int, help='A required integer positional argument')
-#     parser2.add_argument('opt_pos_arg', type=int, nargs='?', default=None, help='An optional integer positional argument')
-# 
-#     # Parse the arguments
-#     args2 = parser2.parse_args()
-# 
-#     # Print the argument values
-#     print("Argument values:")
-#     print(args2.pos_arg)
-#     print(args2.opt_pos_arg)
-# 
-# =============================================================================
+
             
