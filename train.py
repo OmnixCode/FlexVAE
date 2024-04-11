@@ -34,7 +34,7 @@ from utils import setup_logging
 from utils import GPU_thread
 from utils import load_model_checkpoint
 from utils import Configs
-from inference_eval import encode_from_folder, decode_from_diffusion
+from inference_eval import encode_from_folder, decode_from_diffusion, infer_from_folder
 
 import gc #garbage collector
 
@@ -530,21 +530,23 @@ from torchvision import transforms
 # =============================================================================
 
 
-import os
+
 from PIL import Image
 from torchvision import transforms
 
 
 
 
-def estimate_max_batch_size(input_shape=(3,64,64), device='cuda:1', max_memory_usage=0.9):
-    batch_size = 1
+def estimate_max_batch_size(input_shape=(3,64,64), device='cuda:0',batch_start=1, batch_step=1, max_memory_usage=0.9):
+    batch_size = batch_start
+    iterator = 0
     while True:
         try:
             model = VAE(VAE_Encoder, VAE_Decoder, config).to(device)
             inputs = torch.randn((batch_size,) + input_shape).to(device)
             _ = model(inputs)
-            batch_size +=1
+            batch_size +=batch_step
+            iterator += batch_step
             print(batch_size)
             del model
             del inputs
@@ -552,7 +554,7 @@ def estimate_max_batch_size(input_shape=(3,64,64), device='cuda:1', max_memory_u
             torch.cuda.empty_cache()
         except RuntimeError as e:
             print(f"RuntimeError: {e}")
-            print(f"Maximum batch size that fits in memory: {batch_size -1 }")
+            print(f"Maximum batch size that fits in memory: {iterator  }")
             del model
             del inputs
 # =============================================================================
@@ -562,26 +564,47 @@ def estimate_max_batch_size(input_shape=(3,64,64), device='cuda:1', max_memory_u
 # =============================================================================
             inputs=None
             model=None
-            return batch_size -1
+            return iterator  - batch_step
             break
 
             
     gc.collect()
     torch.cuda.empty_cache()   
+    
+def exponential_max_batch_estimator(start_batch_size=1, batch_search_exponent=4, input_shape=(3,64,64), device='cuda:0' ):
+    accum=[0]
+    for e in reversed(range(batch_search_exponent+1)):
+        accum_one=estimate_max_batch_size(input_shape=input_shape, device=device, batch_start=np.sum(accum), batch_step=np.power(2,e))
+        accum.append(accum_one)
+        print("Accum is:", accum)
+    return np.sum(accum)       
 
 def test_limit():
     try:
-        mem1=estimate_max_batch_size(input_shape=(3,config.image_size,config.image_size), device='cuda:0')
-        mem2=estimate_max_batch_size(input_shape=(3,config.image_size,config.image_size), device='cuda:1')
+        num_gpu = torch.cuda.device_count()
+        if args.multi_GPU==False: #Use only one GPU
+            num_gpu=1
+        batch_limits = []
+        for i in range(num_gpu):
+            #mem_i = estimate_max_batch_size(input_shape=(3,config.image_size,config.image_size), device='cuda:'+str(i))
+            mem_i = exponential_max_batch_estimator(start_batch_size=1, batch_search_exponent=3, input_shape=(3,config.image_size,config.image_size), device='cuda:'+str(i) )
+            batch_limits.append(mem_i)
+        #mem1=estimate_max_batch_size(input_shape=(3,config.image_size,config.image_size), device='cuda:0')
+        #mem2=estimate_max_batch_size(input_shape=(3,config.image_size,config.image_size), device='cuda:1')
     except:
         print('Something is wrong')
     finally:
-        print("gooog")
-        print(mem1)
-        print(mem2)
+        print("Estimates are: /n")
+        batch_sum = 0
+        for i in range(num_gpu):
+            batch_sum += batch_limits[i]
+            print(batch_limits[i])
+        #print(mem1)
+        #print(mem2)
         gc.collect()
         torch.cuda.empty_cache()     
-    return mem1+mem2
+        print("btch type is" ,type(batch_sum))
+    return int(batch_sum)
         
 
             
@@ -619,12 +642,18 @@ if __name__ == "__main__":
         parser = argparse.ArgumentParser(description='FlexVae model')
         
         # Add positional arguments
-        parser.add_argument('-mem', '--flag_mem', action='store_true', help='Check the memmory limits for batch -mem')
+        parser.add_argument('-mem', '--flag_mem', action='store_true', help='Check the memory limits for batch -mem')
         parser.add_argument('-t', '--flag_t', action='store_true', help='Train the model -t')
         parser.add_argument('-i', '--flag_i', action='store_true', help='Infer from the model (full VAE passthrough) -i')
         parser.add_argument('-e', '--flag_e', action='store_true', help='Encode the images in the latent space -e')
         parser.add_argument('-d', '--flag_d', action='store_true', help='Decode the images from the latent space -d')
         parser.add_argument('opt_pos_arg', type=int, nargs='?', default=None, help='An optional integer positional argument')
+
+
+        '''
+        add exponential estimator function, change estimator to include how many gpus are active ....
+        '''
+
 
         args = parser.parse_args()
         exclusive_flags(args, ['flag_t', 'flag_i', 'flag_e'])
@@ -650,6 +679,7 @@ if __name__ == "__main__":
         if args.flag_t:
             train(config)
         if args.flag_i:
+            infer_from_folder(config, VAE)
             pass
         if args.flag_e:
             encode_from_folder(config,VAE)
