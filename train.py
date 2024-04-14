@@ -1,46 +1,67 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Sun Nov 12 14:40:59 2023
 
-@author: filipk
-"""
+
+#system libs
 import os, sys
 
 os.chdir("/home/filipk/Desktop/Python Projects/FlexVAE/")
 sys.path.append('src/') #adds the src folder to lib path
 
-
+#custom libs
 from modules import  VAE_Encoder, VAE_Decoder
-import torch
+from inference_eval import encode_from_folder, decode_from_diffusion, infer_from_folder
+#from utils import *
 
+#importing torch modules
+import torch
 from torch import nn
 from torch import optim
 from torch.nn import functional as F 
+from torch.utils.tensorboard import SummaryWriter
 #from torch.profiler import profile, record_function, ProfilerActivity
 
-import argparse
+#importing torchmetrics modules
+from torchmetrics.functional.image import structural_similarity_index_measure as SSIM
 
-from torch.utils.tensorboard import SummaryWriter
+
+#logging and tracking libs
 import logging
 from tqdm import tqdm
 
+#math libs
 import numpy as np
-
-from torchmetrics.functional.image import structural_similarity_index_measure as SSIM
 import math
+
+
+
 from utils import get_data, save_images, load_image, check_nan_inf, check_parameters_for_naninf, save_model_checkpoint, save_model_backup
 from utils import setup_logging
 from utils import GPU_thread
 from utils import load_model_checkpoint
 from utils import Configs
-from inference_eval import encode_from_folder, decode_from_diffusion, infer_from_folder
 
+
+
+#misc libs
+import argparse
 import gc #garbage collector
-
 from collections import OrderedDict
 import pprint #for nice printing of JSON config file
 
+
+# =============================================================================
+# from PIL import Image
+# from torchvision import transforms
+# 
+# =============================================================================
+# =============================================================================
+# import os
+# =============================================================================
+# =============================================================================
+# from PIL import Image
+# from torchvision import transforms
+# =============================================================================
 
 
 class VAE(nn.Module):
@@ -364,7 +385,7 @@ def train(args):
             scheduler.step(loss)
             
         if args.useEMA == True:
-            ema_model.update_parameters(model)
+            ema_model.update_parameters(models[0])
             
         scheduler2.step()    
             
@@ -443,9 +464,7 @@ def sample_on_device(location, epoch, args, rate=5, device='cpu'):
 
 
 
-import os
-from PIL import Image
-from torchvision import transforms
+
 
 
 
@@ -501,38 +520,10 @@ from torchvision import transforms
 
 
 
-# =============================================================================
-# for n in range(10):
-#     a=load_image2("/home/filipk/Desktop/Train_latent/Nat_latents2/"+str(n) +".png")
-#     
-#     
-#     
-#     device = "cuda"
-#     model = VAE(encoder.VAE_Encoder, decoder.VAE_Decoder, args).to(device)
-#     model.eval()   
-#     with torch.no_grad():
-#         ckpt = torch.load(args.resume_path)
-#         model.load_state_dict(ckpt['model_state_dict'])
-#         img_dec=model.decoder(a.to(torch.device('cuda:0')))
-#         save_images(img_dec.detach(),"/home/filipk/Desktop/Train_latent/output/res"+ str(n) +".jpg")
-# =============================================================================
-# =============================================================================
-# from_diffusion=False
-# if from_diffusion==True:
-# =============================================================================
-
-    
-# =============================================================================
-# print("enc:", enc2)
-# print("enc3:", enc3.to(torch.device('cuda:0')))
-# print("Difference:", torch.sum(torch.abs(enc - enc3.to(torch.device('cuda:0')))))
-# 
-# =============================================================================
 
 
 
-from PIL import Image
-from torchvision import transforms
+
 
 
 

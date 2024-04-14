@@ -1,10 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Tue Apr  9 11:58:59 2024
 
-@author: filipk
-"""
 
 import torch
 import os
@@ -69,21 +65,6 @@ def encode_from_folder(config, model):
                 # Get the name of the image
                 image_name = os.path.splitext(image_file)[0]
             
-                # Print the image name
-                #print("Image Name:", image_name)
-                
-                # Assuming your image is a torch tensor
-                #your_tensor_image = latent  # Replace this with your actual tensor
-                
-                # Convert the tensor to a PIL Image
-    # =============================================================================
-    #             to_pil = transforms.ToPILImage()
-    #             pil_image = to_pil(your_tensor_image)
-    #             
-    # =============================================================================
-                # Save the PIL Image to a file
-                #output_path = "/home/filipk/Desktop/Train_latent/Nature/"+ image_name+'.png'  # Change the path and filename as needed
-                
                 os.makedirs(save_PATH+path, exist_ok=True)
                 output_path = save_PATH+path+"/"+ image_name+'.pt'  # Change the path and filename as needed
                 torch.save(latent, output_path)
@@ -141,29 +122,11 @@ def infer_from_folder(config, model):
                 image_tensor = load_image(image_path,config).to(torch.device('cuda:0'))
                 
                 # Do something with the image (e.g., display, process, etc.)
-                #latent = model.encode(image_tensor)
-                #image_infer = model.decoder(latent)
-                #latent = image_infer.squeeze(0)
-                
                 latent =model(image_tensor)
+                
                 # Get the name of the image
                 image_name = os.path.splitext(image_file)[0]
-            
-                # Print the image name
-                #print("Image Name:", image_name)
-                
-                # Assuming your image is a torch tensor
-                #your_tensor_image = latent  # Replace this with your actual tensor
-                
-                # Convert the tensor to a PIL Image
-    # =============================================================================
-    #             to_pil = transforms.ToPILImage()
-    #             pil_image = to_pil(your_tensor_image)
-    #             
-    # =============================================================================
-                # Save the PIL Image to a file
-                #output_path = "/home/filipk/Desktop/Train_latent/Nature/"+ image_name+'.png'  # Change the path and filename as needed
-                
+                          
                 os.makedirs(save_PATH+path, exist_ok=True)
                 output_path = save_PATH+path+"/"+ image_name+'.jpg'  # Change the path and filename as needed
                # torch.save(latent, output_path)
@@ -198,37 +161,11 @@ def decode_from_diffusion(config, model):
         config.resume_path = glob.glob(config.base_path + "VAE_returnto256_square_to16x16"+'/*.pt', recursive=False)[0]
         ckpt = torch.load(config.resume_path)
         model.load_state_dict(ckpt['model_state_dict'])
-        #x=load_image("/home/filipk/Desktop/TRAIN/archive(2)/00000000_(2).jpg", args)
-        #enc=model.encoder(x.to(torch.device('cuda:0')))
-        
-        
-        #Save tensor
-        #output_path = "/home/filipk/Desktop/Train_latent/test/"+ "image_name"+'.pt' 
-        #torch.save(enc, output_path)
-    
+
         # Load the tensor back
         for i in range(200):
             output_path = "/home/filipk/Desktop/Train_latent/create3/"+ str(i)+'.pt'
             loaded_tensor = torch.load(output_path).unsqueeze(0)
             dec=model.decoder(loaded_tensor.to(torch.device('cuda:0')))
-            
-        # =============================================================================
-        #     enc2=enc.squeeze(0)
-        #     
-        #     to_pil = transforms.ToPILImage()
-        #     pil_image = to_pil(enc2)
-        # =============================================================================
-                    
-        # =============================================================================
-        #     # Save the PIL Image to a file
-        #     output_path = "/home/filipk/Desktop/Train_latent/test/"+ "image_name"+'.png'  # Change the path and filename as needed
-        #     pil_image.save(output_path)
-        #     
-        #     enc3=load_image2("/home/filipk/Desktop/Train_latent/test/"+ "image_name"+'.png')
-        #     
-        #     dec=model.decoder(enc3.to(torch.device('cuda:0')))
-        # =============================================================================
-            
-            
             
             save_images(dec.detach(),"/home/filipk/Desktop/Train_latent/output5/res"+ str(i) +".jpg")

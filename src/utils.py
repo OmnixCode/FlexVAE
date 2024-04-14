@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Sat Dec  2 15:56:26 2023
-
-@author: filipk
-"""
 
 import torch
 from torchvision import transforms
@@ -16,7 +11,7 @@ from torch.utils.data import DataLoader
 import os
 import json       
 import torchvision.transforms.functional as F
-from torch import nn
+#from torch import nn
 
 def plot_images(images, args): ##boljiploter napravi
     plt.figure(figsize=(args.image_size, args.image_size))
