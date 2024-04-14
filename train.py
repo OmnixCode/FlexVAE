@@ -35,7 +35,8 @@ import math
 
 
 
-from utils import get_data, save_images, load_image, check_nan_inf, check_parameters_for_naninf, save_model_checkpoint, save_model_backup
+from utils import get_data, save_images, check_nan_inf, check_parameters_for_naninf, save_model_checkpoint, save_model_backup
+#from utils import load_image
 from utils import setup_logging
 from utils import GPU_thread
 from utils import load_model_checkpoint
@@ -55,13 +56,7 @@ import pprint #for nice printing of JSON config file
 # from torchvision import transforms
 # 
 # =============================================================================
-# =============================================================================
-# import os
-# =============================================================================
-# =============================================================================
-# from PIL import Image
-# from torchvision import transforms
-# =============================================================================
+
 
 
 class VAE(nn.Module):
@@ -318,13 +313,6 @@ def train(args):
 
          
             
-# =============================================================================
-#             total += loss.item() 
-#             rec_loss += loss_params['Reconstruction_Loss'].item() 
-#             kld_loss += loss_params['KLD'].item() 
-#             sparse_loss += loss_params['Sparse_Loss'].item() 
-#             simm_loss += loss_params['SSIM_Loss'].item() 
-# =============================================================================
             
             """
             Check if some of the losses become NaN or inf valued
@@ -365,13 +353,8 @@ def train(args):
                 
                 for loss_type in loss_dict:
                   logger.add_scalar(loss_type,  loss_dict[loss_type]/div, global_step=epoch * math.ceil(l/args.batch_accum) + (batch_idx+1)//args.batch_accum + ((batch_idx + 1) % args.batch_accum != 0)*int(batch_idx + 1 == l) )  
-# =============================================================================
-#                 logger.add_scalar("Reconstruction_loss",  rec_loss/div, global_step=epoch * math.ceil(l/args.batch_accum) + (batch_idx+1)//args.batch_accum + ((batch_idx + 1) % args.batch_accum != 0)*int(batch_idx + 1 == l) )
-#                 logger.add_scalar("KLD_loss", kld_loss/div, global_step=epoch * math.ceil(l/args.batch_accum) + (batch_idx+1)//args.batch_accum + ((batch_idx + 1) % args.batch_accum != 0)*int(batch_idx + 1 == l) )
-#                 logger.add_scalar("Sparse_loss", sparse_loss/div, global_step=epoch * math.ceil(l/args.batch_accum) + (batch_idx+1)//args.batch_accum + ((batch_idx + 1) % args.batch_accum != 0)*int(batch_idx + 1 == l) )
-#                 logger.add_scalar("SSIM_loss", simm_loss/div, global_step=epoch * math.ceil(l/args.batch_accum) + (batch_idx+1)//args.batch_accum + ((batch_idx + 1) % args.batch_accum != 0)*int(batch_idx + 1 == l) )
-# =============================================================================
-            
+
+        
            #pbar.set_postfix(MSE=loss.item())
             od = OrderedDict()
             od['Epoch'] = epoch
@@ -470,61 +453,6 @@ def sample_on_device(location, epoch, args, rate=5, device='cpu'):
 
 
 
-# =============================================================================
-# pic1=load_image("/home/filipk/Desktop/nature_pics/sea_selection/00000000_(2).jpg")
-# 
-# save_images(pic1.detach(), "/home/filipk/Desktop/res.jpg")
-# 
-# =============================================================================
-
-
-
-        
-        
-        
-# =============================================================================
-#         for i in range(10):
-#             images =model.sample2(5,16)
-#             epoch='test_noise_3more_readjust'+str(i)
-#             save_images(images.detach(), os.path.join("results", args.run_name, f"{epoch}_orig.jpg"))
-# =============================================================================
-        
-# =============================================================================
-# import torchvision
-# from PIL import Image
-# from torch.utils.data import DataLoader
-# from torchvision import transforms
-# from torchvision.transforms import v2
-# 
-# 
-# 
-# 
-# 
-# device2 = "cuda"
-# model2 = UNet().to(device2)
-# ckpt2 = torch.load("/home/filipk/Desktop/Diffusion-Models-pytorch-cutversion/Diffusion-Models-pytorch-main/models/DDPM_Unconditional/ckpt.pt")
-# model2.load_state_dict(ckpt2)
-# diffusion = Diffusion(img_size=8, device=device)
-# x = diffusion.sample(model, n=16)
-# =============================================================================
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -580,8 +508,6 @@ def test_limit():
             #mem_i = estimate_max_batch_size(input_shape=(3,config.image_size,config.image_size), device='cuda:'+str(i))
             mem_i = exponential_max_batch_estimator(start_batch_size=1, batch_search_exponent=3, input_shape=(3,config.image_size,config.image_size), device='cuda:'+str(i) )
             batch_limits.append(mem_i)
-        #mem1=estimate_max_batch_size(input_shape=(3,config.image_size,config.image_size), device='cuda:0')
-        #mem2=estimate_max_batch_size(input_shape=(3,config.image_size,config.image_size), device='cuda:1')
     except:
         print('Something is wrong')
     finally:
