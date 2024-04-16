@@ -13,7 +13,7 @@ import json
 import torchvision.transforms.functional as F
 #from torch import nn
 
-def plot_images(images, args): ##boljiploter napravi
+def plot_images(images, args): ##not the best plotter... change this
     plt.figure(figsize=(args.image_size, args.image_size))
     plt.imshow(torch.cat([
         torch.cat([i for i in images], dim=-1),

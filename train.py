@@ -10,7 +10,7 @@ sys.path.append('src/') #adds the src folder to lib path
 
 #custom libs
 from modules import  VAE_Encoder, VAE_Decoder
-from inference_eval import encode_from_folder, decode_from_diffusion, infer_from_folder
+from inference_eval import encode_from_folder, decode_from_diffusion, infer_from_folder,  interpolate
 #from utils import *
 
 #importing torch modules
@@ -211,7 +211,11 @@ def train(args):
     if args.resume == True:
         models[0], optimizer, loss, start_epoch, kld_mult = load_model_checkpoint(models[0], optimizer, args.resume_path)
         if args.reinit_optim == True:
-            optimizer = optim.AdamW(models[0].parameters(), lr = 3e-4)
+            optimizer = optim.AdamW(models[0].parameters(), lr = args.reinit_lr)
+            PATH_CFG = 'configs/config2.cfg'
+            with open(PATH_CFG, 'w+') as f:
+                args.reinit_optim = False
+                json.dump(args._variables, f, indent=2)
         #optimizer = optim.NAdam(model.parameters(), lr = 2e-4)
 
     if args.useEMA == True:
@@ -547,6 +551,31 @@ def exclusive_flags(parser, flags):
         raise argparse.ArgumentError(None, "Exactly one of {} must be set.".format(', '.join(flags)))
 
 
+def decode_action(string):
+    # Splitting the string into parameters
+    params = string.split()
+    # If only one parameter is provided, set default for the optional parameter
+    if len(params) == 1:
+        return (params[0], params[0], 1)
+    # If two parameters are provided, set default for the third parameter
+    elif len(params) == 2:
+        return (params[0], params[1], 1)
+    # If all three parameters are provided
+    elif len(params) == 3:
+        return tuple(params)
+    else:
+        raise argparse.ArgumentTypeError('Invalid number of parameters for -d')
+
+def parse_interpolation(params):
+    if len(params) == 1:
+        return (params[0], params[0], 1)
+    if len(params) == 2:
+        return (params[0], params[1], 1)  
+    elif len(params) == 3:
+        return tuple(params)
+    else:
+        raise argparse.ArgumentTypeError('Invalid number of parameters for -d')
+        
 
 if __name__ == "__main__":
     if is_running_in_spyder():
@@ -560,12 +589,15 @@ if __name__ == "__main__":
         
         # Add positional arguments
         parser.add_argument('-mem', '--flag_mem', action='store_true', help='Check the memory limits for batch -mem')
+        parser.add_argument('-wo', '--flag_wo', action='store_true', help='Write out changes to config to the config file')
         parser.add_argument('-t', '--flag_t', action='store_true', help='Train the model -t')
         parser.add_argument('-i', '--flag_i', action='store_true', help='Infer from the model (full VAE passthrough) -i')
         parser.add_argument('-e', '--flag_e', action='store_true', help='Encode the images in the latent space -e')
         parser.add_argument('-d', '--flag_d', action='store_true', help='Decode the images from the latent space -d')
-        parser.add_argument('opt_pos_arg', type=int, nargs='?', default=None, help='An optional integer positional argument')
+        parser.add_argument('-inter','--flag_inter', nargs='+', action='store', help='Interpolate between two images in latent space -inter')
 
+        for key, value in config._variables.items():
+            parser.add_argument(f'-{key}', nargs=1, type = type(value), action='store', help='Check the documentation')
 
         '''
         add exponential estimator function, change estimator to include how many gpus are active ....
@@ -573,7 +605,7 @@ if __name__ == "__main__":
 
 
         args = parser.parse_args()
-        exclusive_flags(args, ['flag_t', 'flag_i', 'flag_e'])
+        exclusive_flags(args, ['flag_t', 'flag_i', 'flag_e', 'flag_inter'])
         # Print the argument values
         # Access the flags
         if args.flag_mem:
@@ -584,13 +616,25 @@ if __name__ == "__main__":
             print("-i flag is set")
         if args.flag_e:
             print("-e flag is set")
-            if args.flag_e:
-                print("-d flag is set")
+        if args.flag_d:
+            print("-d flag is set")
+        if args.flag_inter:
+            print("-inter flag is set")
 
         print("Argument values:")
-        #  print(args.mode)
-        print(args.opt_pos_arg)
-        
+        #print(args.__dict__)
+        for key, value in config._variables.items():
+            if args.__dict__[key]:
+                if isinstance(args.__dict__[key], list):
+                    args.__dict__[key]= args.__dict__[key][0]
+                config._variables[key]=args.__dict__[key]
+                print('config values are changed')        
+                
+        if args.flag_wo:
+            PATH_CFG = 'configs/config3.cfg'
+            with open(PATH_CFG, 'w+') as f:
+                json.dump(config._variables, f, indent=2)    
+                
         if args.flag_mem:
            config.batch_size=test_limit()
         if args.flag_t:
@@ -605,6 +649,15 @@ if __name__ == "__main__":
             decode_from_diffusion(config, VAE)
             pass
         
+        
+        if args.flag_inter:
+            img1, img2, percentage = parse_interpolation(args.flag_inter)
+            #print(f'Parameters for -inter: {args.flag_inter}')
+            print(img1,img2,percentage)
             
+            #interpolate(img1, img2, percentage, config, model)
+            pass
+        
+
 
             

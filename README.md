@@ -6,6 +6,7 @@
 - [ ] Add intermidiate layer quantization
 - [ ] Add mixed precision support
 - [ ] Multi-dim data support
+- [ ] Add different training regimes (annealing...)
 ## Working principles
 
 ### Autoencoders
