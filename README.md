@@ -206,7 +206,8 @@ Available modes are:<br />
 
 
   ## Pretrained weights and dataset:
-  Soon to be posted!!!
+  <span style="color: green"> Soon to be posted!!! </span>
+
 
 
 
