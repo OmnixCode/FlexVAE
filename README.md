@@ -196,7 +196,19 @@ Available modes are:<br />
 **-t**&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;train <br />
 **-i**&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;inference (full pass through the VAE network (encoder + decoder)) <br />
 **-e**&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;encode (encode the images from the folder into latent representation) <br />
+**-d**&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;decode (decode from the latent representation) <br />
 **-mem** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; estimate the maximum batch size for training  <br />
+
+Only one of the flags -t, -i, -e, -d, can be selected. In addition, one of these flags must be selected (or -h).
+
+There are addigional list of flags that can be set (they can be listed through -h option).
+These flags set the config variables if we want to change them and not use the ones from the config file.
+e.g.:
+```
+./train.py  -t -reinit_optim True -reinit_lr 0.005 -wo
+```
+in addition we have a -wo flag in the end. This flag writes-out the changed config variables to the config file, so we can use this setting in the future.
+
 ### Inference example
 
 <p align="center">
