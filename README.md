@@ -14,8 +14,6 @@ An autoencoder is a type of artificial neural network used for unsupervised lear
 The network aims to learn a compressed representation (encoding) of the input data, often referred to as the latent space, 
 and then reconstruct the original input from this representation (decoding).
 
-We can also visualise its structure:
-
 ![Autoencoder diagram](/assets/autoenc.png)
 
 Here's a basic description of the autoencoder network:
@@ -43,6 +41,9 @@ and variational autoencoders, each tailored for specific applications or constra
 
 
 ### Variational Autoencoders
+
+![VAE diagram](/assets/variautoenc.png)
+
 Compared to regular autoencoders, variational autoencoders introduce additional loss term that forces the latent space to have a standard normal distribution (a normal distribution with zero mean and variance of 1). Instead of the direct passing of the latent space variable from the encoder to the decoder, we first calculate the mean and the variance of this variable. Afterwards, we randomly sample the latent tensor (vector) from the distribution with this mean and variance and pass it to the decoder. To estimate how different is this distribution from the normal distribution we use [KL divergence](https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence).
 
 ## Implementation choices
