@@ -206,7 +206,7 @@ Available modes are:<br />
 
 
   ## Pretrained weights and dataset:
-  $$\color{red}{Soon \space to \space be \space posted!!!}$$
+  $$\color{red}\Large{Soon \space to \space be \space posted!!!}$$
 
 
 
