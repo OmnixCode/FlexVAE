@@ -14,6 +14,10 @@ An autoencoder is a type of artificial neural network used for unsupervised lear
 The network aims to learn a compressed representation (encoding) of the input data, often referred to as the latent space, 
 and then reconstruct the original input from this representation (decoding).
 
+We can also visualise its structure:
+
+![Autoencoder diagram](/assets/autoenc.png)
+
 Here's a basic description of the autoencoder network:
 
 Encoder: The encoder part of the network takes the input data and maps it to a lower-dimensional latent space representation. 
