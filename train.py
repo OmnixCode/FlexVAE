@@ -8,6 +8,9 @@ import os, sys
 os.chdir("/home/filipk/Desktop/Python Projects/FlexVAE/")
 sys.path.append('src/') #adds the src folder to lib path
 
+#Path from which config file is loaded
+cfg_preset_path = 'configs/config.cfg'
+
 #custom libs
 from modules import  VAE_Encoder, VAE_Decoder
 from inference_eval import encode_from_folder, decode_from_diffusion, infer_from_folder,  interpolate
@@ -212,7 +215,7 @@ def train(args):
         models[0], optimizer, loss, start_epoch, kld_mult = load_model_checkpoint(models[0], optimizer, args.resume_path)
         if args.reinit_optim == True:
             optimizer = optim.AdamW(models[0].parameters(), lr = args.reinit_lr)
-            PATH_CFG = 'configs/config2.cfg'
+            PATH_CFG = cfg_preset_path
             with open(PATH_CFG, 'w+') as f:
                 args.reinit_optim = False
                 json.dump(args._variables, f, indent=2)
@@ -410,7 +413,7 @@ Argument definitions and other options
 
 
 import json 
-PATH_CFG = 'configs/config.cfg'
+PATH_CFG = cfg_preset_path
 with open(PATH_CFG, 'r') as f:
     config=Configs(json.load(f))
 
@@ -631,7 +634,7 @@ if __name__ == "__main__":
                 print('config values are changed')        
                 
         if args.flag_wo:
-            PATH_CFG = 'configs/config3.cfg'
+            PATH_CFG = cfg_preset_path
             with open(PATH_CFG, 'w+') as f:
                 json.dump(config._variables, f, indent=2)    
                 
