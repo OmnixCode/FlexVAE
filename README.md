@@ -207,7 +207,7 @@ e.g.:
 ```
 ./train.py  -t -reinit_optim True -reinit_lr 0.005 -wo
 ```
-in addition we have a -wo flag in the end. This flag writes-out the changed config variables to the config file, so we can use this setting in the future.
+in addition we have a -wo flag at the end. This flag writes-out the changed config variables to the config file, so we can use these settings in the future.
 
 ### Inference example
 
