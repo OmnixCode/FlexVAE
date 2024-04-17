@@ -78,7 +78,7 @@ class VAE(nn.Module):
         kld_weight=(epoch / 100) - int(epoch / 100) #bilo0.03
         kld_weight=1/4*0.01 #bilo 10000 poslednje 1/10
 
-        recons_loss = 400*F.mse_loss(reconstructed_image, input_image)#*128*128*3 #change to 10, 20 gave interesting stuff#last=5 @bilo 100
+        recons_loss = 400*F.mse_loss(reconstructed_image, input_image)
         if ssim_metrics == True:
             ssim_loss = SSIM(reconstructed_image, input_image)
         else:
