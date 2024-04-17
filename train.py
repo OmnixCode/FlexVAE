@@ -74,10 +74,10 @@ class VAE(nn.Module):
         return x
     
     def loss_function(self,input_image, reconstructed_image, epoch=0, kld_mult=0, ssim_metrics = True, alpha=0.5, beta=0.5,sparse_metrics = False, lambd = 1):
-        #kld_weight=1
+
         kld_weight=(epoch / 100) - int(epoch / 100) #bilo0.03
         kld_weight=1/4*0.01 #bilo 10000 poslednje 1/10
-        #bilo10
+
         recons_loss = 400*F.mse_loss(reconstructed_image, input_image)#*128*128*3 #change to 10, 20 gave interesting stuff#last=5 @bilo 100
         if ssim_metrics == True:
             ssim_loss = SSIM(reconstructed_image, input_image)
@@ -102,14 +102,11 @@ class VAE(nn.Module):
         kld_loss= kld_loss/(c*ld)
         sparse_loss= sparse_loss/(b*c*ld)
         
-        #activate sparse 1809 epoch
+
         
-        #loss = alpha*recons_loss + 0*beta*(1-ssim_loss) + kld_weight * kld_loss + 20*sparse_loss #0.3 gore
-        loss = alpha*recons_loss + 0*beta*(1-ssim_loss) + kld_weight * kld_loss + 0*sparse_loss #0.3 gore
+
         loss = alpha*recons_loss + ssim_metrics*beta*(1-ssim_loss) + kld_weight * kld_loss + sparse_metrics*0*sparse_loss
-        #loss = alpha*recons_loss +20*beta*(1-ssim_loss) #0.3 gore
-        #loss=alpha*recons_loss + kld_weight * kld_loss.to(torch.device('cuda:0'))
-        #return{'loss': loss, 'Reconstruction_Loss':recons_loss.detach(), 'KLD':-kld_loss.detach()}
+
         return{'loss': loss, 'Reconstruction_Loss':(alpha*recons_loss.detach()),'SSIM_Loss':(beta*(1-ssim_loss.detach())),'Sparse_Loss':20*sparse_loss, 'KLD':(kld_weight * kld_loss).detach()}
     
     def loss_function_correct9():
@@ -142,7 +139,7 @@ class VAE(nn.Module):
 
       
 
-#time 3:56
+
 import threading
 from queue import Queue
 result_queues = Queue()
@@ -175,17 +172,16 @@ def handle_resize(signal, frame):
 
 
 signal.signal(signal.SIGWINCH, handle_resize)
-#epoch1104 promena padda
-#import copy
+
 
 def train(args): 
     global pbar, resize_triggered
     pprint.pprint(args.__dict__) #print config file with settings
     print('\n')
     setup_logging(args.run_name)
-    #device=args.device
+
     dataloader = get_data(args)
-    #model = VAE(encoder.VAE_Encoder, decoder.VAE_Decoder, args).to(torch.device('cuda:0'))
+
 
     
     #find number of GPUs and their rounded memmory in GBs (also the ratio of memories in regards to the smallest GPU)
@@ -260,7 +256,7 @@ def train(args):
             for i in range(1, num_gpu):
                 models[i].load_state_dict(models[0].state_dict())
                 
-            #model2.load_state_dict(models[0].state_dict())
+
             
             
             images = images.to(torch.device('cuda:0'))
@@ -268,17 +264,13 @@ def train(args):
             #noise = torch.randn((images.size(0), 4, args.lat_size))
             batch_size = np.array(images.size()[0])
             chunk_sizes= np.round(batch_size * mem_fraction)
-            #print(chunk_sizes)
-            #print('eeeee')
-            #images1, images2= torch.split(images, dim=0, split_size_or_sections=[images.size()[0]-images.size()[0]//3, images.size()[0]//3])
-            
+
             #split image batch into sub-batch for each GPU
             chunks = torch.split(images, dim=0, split_size_or_sections=list(chunk_sizes.astype(int)))
             
             
 
-          #  assert images1.size()[0]==8, "List1 must not be empty " +str(images1.size()[0])
-         #   assert images2.size()[0]==4, "List2 must not be empty "+str(images2.size()[0])
+
             
 
             
@@ -401,15 +393,7 @@ def train(args):
 Argument definitions and other options
 """
         
-# =============================================================================
-# parser = argparse.ArgumentParser()
-# args = parser.parse_args()
-# 
-# import json
-# PATH_CFG = 'configs/config.cfg'
-# with open(PATH_CFG, 'r') as f:
-#     args.__dict__=json.load(f)
-# =============================================================================
+
 
 
 import json 
@@ -427,15 +411,7 @@ if config.resume == True:
 
 
     
-# =============================================================================
-# input_image = torch.rand((1, 3, 256, 256)).to(torch.device('cuda:0'))
-# noise = torch.rand((1, 1, 64, 64)).to(torch.device('cuda:0'))
-# 
-# vae = VAE(encoder.VAE_Encoder, decoder.VAE_Decoder).cuda()
-# 
-# output = vae(input_image, noise).cpu().detach()
-# plt.imshow(output[0].permute(1, 2, 0))
-# =============================================================================
+
 
 
 
@@ -660,7 +636,7 @@ if __name__ == "__main__":
             img1, img2, percentage = parse_interpolation(args.flag_inter)
             #print(f'Parameters for -inter: {args.flag_inter}')
             print(img1,img2,percentage)
-            
+            print('Feature still being tested.... soon to be updated')
             #interpolate(img1, img2, percentage, config, model)
             pass
         
