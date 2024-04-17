@@ -5,7 +5,7 @@
 #system libs
 import os, sys
 
-os.chdir("/home/filipk/Desktop/Python Projects/FlexVAE/")
+
 sys.path.append('src/') #adds the src folder to lib path
 
 #Path from which config file is loaded
@@ -583,6 +583,9 @@ def parse_interpolation(params):
 if __name__ == "__main__":
     if is_running_in_spyder():
         print("Running in Spyder")
+        work_folder=os.getcwd()
+        os.chdir(work_folder)
+        
         #add way to input the parameters from the window
     else:
         os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:100"
