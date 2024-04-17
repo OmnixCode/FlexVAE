@@ -49,9 +49,9 @@ Compared to regular autoencoders, variational autoencoders introduce additional 
 ## Implementation choices
 ### Model definition
 Encoder and decoder networks used in VAE are defined with the help of structure JSON files.
-This list is then passed to sequential model generator.
-In order to shorten notation, we can also string multiple same layers with the help of multiplication operator.
-i.e. "2*VAERB_256_256" is short notation for:
+This list is then passed to the sequential model generator.
+In order to shorten notation, we can also string multiple same layers with the help of the multiplication operator.
+i.e. "2*VAERB_256_256" is a short notation for:
 ```json
 [
   "VAERB_256_256",
@@ -104,11 +104,11 @@ Our basic encoder model is defined as:
   "C2d_8_8_1_1_0"
 ]
 ```
-We can also visualise its structure:
+We can also visualize its structure:
 
 ![Example structure of VAE encoder](/assets/encod.png)
 
-Alternatively basic decoder model is defined as:
+Alternatively, basic decoder model is defined as:
 ```json
 [
   "C2d_4_4_1_1_0",
@@ -132,17 +132,17 @@ Alternatively basic decoder model is defined as:
 
 ### Loss functions
 
-Loss function for the the model is expressed as: 
+The loss function for the model is expressed as: 
 $$L_{total} = \alpha  \cdot  L_{reconstruction} + kld{\textunderscore}weight  \cdot  L_{KLD} + ssim{\textunderscore}metrics  \cdot  \beta  \cdot  (1-L_{ssim}) + sparse{\textunderscore}metrics \cdot L\_{sparse} $$
 
 Where $ssim{\textunderscore}metrics$ and $sparse{\textunderscore}metrics$ are logical variables that take the ${\color{red}True}$ or ${\color{red}False}$ values.
-This is internaly converted to 0 or 1 and this effectively turns off or on the SSIM and sparse parts of the total loss.
+This is internally converted to 0 or 1 and this effectively turns off or on the SSIM and sparse parts of the total loss.
 
 
 ## How to use
 
 ### Configuration modes
-Model configuration file is present in /configs/config.cfg file. Here we can adjust all the input, output and training parameters.
+The model configuration file is present in /configs/config.cfg file. Here we can adjust all the input, output, and training parameters.
 
 ```json
 {
@@ -201,13 +201,13 @@ Available modes are:<br />
 
 Only one of the flags -t, -i, -e, -d, can be selected. In addition, one of these flags must be selected (or -h).
 
-There are addigional list of flags that can be set (they can be listed through -h option).
+There is an additional list of flags that can be set (they can be listed through -h option).
 These flags set the config variables if we want to change them and not use the ones from the config file.
 e.g.:
 ```
 ./train.py  -t -reinit_optim True -reinit_lr 0.005 -wo
 ```
-in addition we have a -wo flag at the end. This flag writes-out the changed config variables to the config file, so we can use these settings in the future.
+in addition, we have a -wo flag at the end. This flag writes out the changed config variables to the config file, so we can use these settings in the future.
 
 ### Inference example
 
