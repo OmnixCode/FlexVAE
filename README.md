@@ -154,14 +154,15 @@ Model configuration file is present in /configs/config.cfg file. Here we can adj
   "sample_every_n_iter": 10,
   "lat_size": 16,
   "epochs": 1000,
-  "batch_size": 100,
+  "batch_size": 13,
   "batch_accum": 3,
-  "image_size": 64,
-  "dataset_path": "/home/filipk/Desktop/TRAIN",
+  "image_size": 256,
+  "dataset_path": "/home/filipk/Desktop/Train_set",
   "device": "cuda",
   "lr": 0.0004,
-  "resume": false,
-  "reinit_optim": false,
+  "resume": true,
+  "reinit_optim": true,
+  "reinit_lr": 0.00005,
   "use_scheduler": true,
   "ReduceLROnPlateau": false,
   "useEMA": false,
@@ -169,7 +170,16 @@ Model configuration file is present in /configs/config.cfg file. Here we can adj
   "latent_conversion_disable": true,
   "multi_GPU": true,
   "decoder_struct" : "VAE_decoder",
-  "encoder_struct" : "VAE_encoder"
+  "encoder_struct" : "VAE_encoder",
+  "encode_path" : "/home/filipk/Desktop/TRAIN/",
+  "encode_save_path" : "/home/filipk/Desktop/Train_latent/Nature_tensors_final/",
+  "decode_path" : "/home/filipk/Desktop/Train_latent/create3/",
+  "decode_save_path" : "/home/filipk/Desktop/Train_latent/output5/",
+  "infer_folder_input": "/home/filipk/Desktop/TRAIN/",
+  "infer_folder_output": "/home/filipk/Desktop/Train_latent/Nature_tensors_final/",
+  "interpolate_folder1": "/home/filipk/Desktop/TRAIN/",
+  "interpolate_folder2": "/home/filipk/Desktop/TRAIN/",
+  "inter_out": "/home/filipk/Desktop/"
   
 }
 ```
