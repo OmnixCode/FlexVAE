@@ -207,7 +207,6 @@ Available modes are:<br />
 
 
 <p align="center">
-
     <img width="800" src="/assets/nature_reconstructed.jpg" alt="VAE reconstruction">
     <br> <!-- Optional line break for better separation -->
     Reconstructed image <!-- Description for the image -->
