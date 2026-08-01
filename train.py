@@ -68,6 +68,9 @@ class VAE(nn.Module):
         self.encoder = VAE_encoder(args.encoder_struct, args.image_size, args.lat_size, latent_conversion_disable= args.latent_conversion_disable)
         self.decoder = VAE_decoder(args.decoder_struct, args.image_size, args.lat_size, latent_conversion_disable= args.latent_conversion_disable)
         self.latent_conversion_disable = args.latent_conversion_disable
+        #weight of the KLD term, tunable through the 'kld_weight' config key;
+        #the default keeps the previously hardcoded value (1/4*0.01)
+        self.kld_weight = getattr(args, 'kld_weight', 1/4*0.01)
     def forward(self, x, noise=None):
         x=self.encoder(x, noise)
         x=self.decoder(x)
@@ -81,8 +84,7 @@ class VAE(nn.Module):
         if log_var is None:
             log_var = self.encoder.log_var
 
-        kld_weight=(epoch / 100) - int(epoch / 100) #bilo0.03
-        kld_weight=1/4*0.01 #bilo 10000 poslednje 1/10
+        kld_weight = self.kld_weight
 
         recons_loss = 400*F.mse_loss(reconstructed_image, input_image)
         if ssim_metrics == True:
