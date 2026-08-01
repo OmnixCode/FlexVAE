@@ -120,13 +120,19 @@ class VAE(nn.Module):
         pass
     
     def sample(self, n_samples, lat_size):
-        noise = torch.mul(torch.randn((n_samples, 4, lat_size)).to(torch.device('cuda:0')), 1)
-        x = self.decoder(noise)
+        """
+        The encoder outputs latents scaled by 0.18215 and the decoder divides its input
+        by the same constant. A prior sample z~N(0,1) therefore has to be scaled by
+        0.18215 before entering the decoder - otherwise the decoder sees latents with
+        std 1/0.18215 (~5.5x larger than anything seen during training).
+        """
+        noise = torch.randn((n_samples, 4, lat_size)).to(torch.device('cuda:0'))
+        x = self.decoder(noise * 0.18215)
         return(x)
     
     def sample2(self, n_samples, lat_size):
-        noise = torch.mul(torch.randn((n_samples, 4, lat_size, lat_size)).to(torch.device('cuda:0')), 1)
-        x = self.decoder(noise)
+        noise = torch.randn((n_samples, 4, lat_size, lat_size)).to(torch.device('cuda:0'))
+        x = self.decoder(noise * 0.18215)
         return(x)
     
     def encode(self, image):
@@ -413,7 +419,7 @@ def train(args):
         #sample_on_device(location, epoch, args, rate=5, device='cpu')
         models[0].eval()
         with torch.no_grad():
-            images =models[0].sample2(4,16)
+            images =models[0].sample2(4, args.lat_size)
             save_images(images.detach(), os.path.join("samples", args.run_name, f"epoch_{epoch}_sampling.jpg"))
         models[0].train()
 
@@ -456,7 +462,7 @@ def sample_on_device(location, epoch, args, rate=5, device='cpu'):
         with torch.no_grad():
             ckpt = torch.load(location)
             model.load_state_dict(ckpt['model_state_dict']) #this was missing
-            images =model.sample2(24,32)
+            images =model.sample2(24, args.lat_size)
             save_images(images.detach(), os.path.join("samples", args.run_name, f"{epoch}_orig.jpg"))
 
 
