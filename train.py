@@ -562,6 +562,20 @@ def exclusive_flags(parser, flags):
         raise argparse.ArgumentError(None, "Exactly one of {} must be set.".format(', '.join(flags)))
 
 
+def str2bool(value):
+    """
+    Parser for boolean command line arguments. Plain bool() cannot be used because
+    bool('False') evaluates to True (any non-empty string is truthy).
+    """
+    if isinstance(value, bool):
+        return value
+    if value.lower() in ('true', 't', 'yes', 'y', '1'):
+        return True
+    if value.lower() in ('false', 'f', 'no', 'n', '0'):
+        return False
+    raise argparse.ArgumentTypeError(f"Boolean value expected, got '{value}'")
+
+
 def decode_action(string):
     # Splitting the string into parameters
     params = string.split()
@@ -611,7 +625,8 @@ if __name__ == "__main__":
         parser.add_argument('-inter','--flag_inter', nargs='+', action='store', help='Interpolate between two images in latent space -inter')
 
         for key, value in config._variables.items():
-            parser.add_argument(f'-{key}', nargs=1, type = type(value), action='store', help='Check the documentation')
+            arg_type = str2bool if isinstance(value, bool) else type(value)
+            parser.add_argument(f'-{key}', nargs=1, type = arg_type, action='store', help='Check the documentation')
 
         '''
         add exponential estimator function, change estimator to include how many gpus are active ....
@@ -619,7 +634,7 @@ if __name__ == "__main__":
 
 
         args = parser.parse_args()
-        exclusive_flags(args, ['flag_t', 'flag_i', 'flag_e', 'flag_inter'])
+        exclusive_flags(args, ['flag_t', 'flag_i', 'flag_e', 'flag_d', 'flag_inter'])
         # Print the argument values
         # Access the flags
         if args.flag_mem:
