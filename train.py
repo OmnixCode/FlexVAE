@@ -88,7 +88,10 @@ class VAE(nn.Module):
 
         recons_loss = 400*F.mse_loss(reconstructed_image, input_image)
         if ssim_metrics == True:
-            ssim_loss = SSIM(reconstructed_image, input_image)
+            #images are normalized to [-1, 1]; without an explicit data_range torchmetrics
+            #estimates it from each batch (and the decoder output is unbounded), which makes
+            #the SSIM term inconsistent between batches
+            ssim_loss = SSIM(reconstructed_image, input_image, data_range=2.0)
         else:
             alpha=1
             ssim_loss = torch.zeros((), device=input_image.device)
