@@ -89,6 +89,7 @@ class VAE(nn.Module):
             ssim_loss = SSIM(reconstructed_image, input_image)
         else:
             alpha=1
+            ssim_loss = torch.zeros((), device=input_image.device)
         
         sparse_loss = lambd *torch.sum(torch.abs(mu))
         
@@ -113,7 +114,7 @@ class VAE(nn.Module):
 
         loss = alpha*recons_loss + ssim_metrics*beta*(1-ssim_loss) + kld_weight * kld_loss + sparse_metrics*0*sparse_loss
 
-        return{'loss': loss, 'Reconstruction_Loss':(alpha*recons_loss.detach()),'SSIM_Loss':(beta*(1-ssim_loss.detach())),'Sparse_Loss':20*sparse_loss, 'KLD':(kld_weight * kld_loss).detach()}
+        return{'loss': loss, 'Reconstruction_Loss':(alpha*recons_loss.detach()),'SSIM_Loss':(ssim_metrics*beta*(1-ssim_loss.detach())),'Sparse_Loss':20*sparse_loss.detach(), 'KLD':(kld_weight * kld_loss).detach()}
     
     def loss_function_correct9():
         pass
@@ -389,7 +390,7 @@ def train(args):
             od['Epoch'] = epoch
             for loss_type in loss_dict:
                 od[loss_type] = loss_dict[loss_type]/div
-            od['learn_rate'] = scheduler2.get_last_lr()
+            od['learn_rate'] = [group['lr'] for group in optimizer.param_groups]
             pbar.set_postfix(od)
             #pbar.set_postfix({'Epoch' : epoch, 'Total_loss':total/div,'rec_loss': loss_dict["Reconstruction_Loss"]/div,'KLD_loss':loss_dict["KLD"]/div,'Sparse':loss_dict["Sparse_Loss"]/div,'SIMM_loss':loss_dict["SSIM_Loss"]/div,'learn_rate':scheduler2.get_last_lr()})
             
@@ -399,7 +400,8 @@ def train(args):
         if args.useEMA == True:
             ema_model.update_parameters(models[0])
             
-        scheduler2.step()    
+        if args.use_scheduler == True:
+            scheduler2.step()    
             
         save_images(images.detach(), os.path.join("results", args.run_name, f"{epoch}_orig.jpg"))
         save_images(predicted_image.detach(), os.path.join("results", args.run_name, f"{epoch}.jpg"))
