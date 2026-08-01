@@ -63,7 +63,17 @@ def get_data(args):
         torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
     ])
     dataset = torchvision.datasets.ImageFolder(args.dataset_path, transform=transforms)
-    dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True)
+    #num_workers / pin_memory keep the GPU fed while the CPU loads the next batch;
+    #defaults keep old single-process behavior if the keys are missing from a config
+    num_workers = int(getattr(args, 'num_workers', 0))
+    pin_memory = bool(getattr(args, 'pin_memory', False))
+    dataloader = DataLoader(
+        dataset,
+        batch_size=args.batch_size,
+        shuffle=True,
+        num_workers=num_workers,
+        pin_memory=pin_memory,
+    )
     return dataloader
 
 def load_image(image_path, args):
@@ -140,10 +150,8 @@ def check_parameters_for_naninf(parameters : dict):
               
               
               
-def save_model_checkpoint(model, optimizer, loss, epoch, img_size, lat_size, kld_mult, args):
-    param_string = str(img_size) + '_to_' + str(lat_size) + '_kld_mult_' + str(kld_mult) + '_epoch_' + str(epoch) + "ckpt.pt"
-    PATH = os.path.join("models", args.run_name, param_string)
-    torch.save({
+def _checkpoint_payload(model, optimizer, loss, epoch, img_size, lat_size, kld_mult, ema_model=None):
+    payload = {
         'model_state_dict' : model.state_dict(),
         'optimizer_state_dict' : optimizer.state_dict(),
         'loss' : loss,
@@ -151,7 +159,16 @@ def save_model_checkpoint(model, optimizer, loss, epoch, img_size, lat_size, kld
         'image_size' : img_size,
         'latent_size' : lat_size,
         'kld_mult' : kld_mult
-        }, PATH)
+        }
+    if ema_model is not None:
+        payload['ema_state_dict'] = ema_model.state_dict()
+    return payload
+
+
+def save_model_checkpoint(model, optimizer, loss, epoch, img_size, lat_size, kld_mult, args, ema_model=None):
+    param_string = str(img_size) + '_to_' + str(lat_size) + '_kld_mult_' + str(kld_mult) + '_epoch_' + str(epoch) + "ckpt.pt"
+    PATH = os.path.join("models", args.run_name, param_string)
+    torch.save(_checkpoint_payload(model, optimizer, loss, epoch, img_size, lat_size, kld_mult, ema_model), PATH)
 
     param_string = str(img_size) + '_to_' + str(lat_size) + '_kld_mult_' + str(kld_mult) + '_epoch_' + str(epoch-1) + "ckpt.pt"
     PATH = os.path.join("models", args.run_name, param_string)
@@ -159,19 +176,11 @@ def save_model_checkpoint(model, optimizer, loss, epoch, img_size, lat_size, kld
         os.remove(PATH)
         
         
-def save_model_backup(model, optimizer, loss, epoch, img_size, lat_size, kld_mult, args):
+def save_model_backup(model, optimizer, loss, epoch, img_size, lat_size, kld_mult, args, ema_model=None):
     if (((epoch+1)% args.backup_every_n_iter ==0) and (epoch !=0)):
         param_string = str(img_size) + '_to_' + str(lat_size) + '_kld_mult_' + str(kld_mult) + '_epoch_' + str(epoch) + "ckpt.pt"
         PATH = os.path.join("models", args.run_name,"backup", param_string)
-        torch.save({
-            'model_state_dict' : model.state_dict(),
-            'optimizer_state_dict' : optimizer.state_dict(),
-            'loss' : loss,
-            'epoch' : epoch,
-            'image_size' : img_size,
-            'latent_size' : lat_size,
-            'kld_mult' : kld_mult
-            }, PATH)
+        torch.save(_checkpoint_payload(model, optimizer, loss, epoch, img_size, lat_size, kld_mult, ema_model), PATH)
 
         param_string = str(img_size) + '_to_' + str(lat_size) + '_kld_mult_' + str(kld_mult) + '_epoch_' + str(epoch) + "ckpt.txt"
         PATH = os.path.join("models", args.run_name,"backup", param_string)
@@ -191,9 +200,10 @@ def setup_logging(run_name, names=["models","results", "samples"]):
 
 
 
-def load_model_checkpoint(model, optimizer, PATH): 
+def load_model_checkpoint(model, optimizer, PATH, ema_model=None): 
     '''
-    Loads model and optimizer parameters from the PATH variable
+    Loads model and optimizer parameters from the PATH variable.
+    If ema_model is provided and the checkpoint contains ema_state_dict, it is restored too.
     '''
     #the memmory is used ineficiently... try to correct so the model is not initiated twice
     ckpt = torch.load(PATH)
@@ -202,8 +212,60 @@ def load_model_checkpoint(model, optimizer, PATH):
     loss = ckpt['loss']
     start_epoch = ckpt['epoch']+1
     kld_mult = ckpt['kld_mult']
+    if ema_model is not None and 'ema_state_dict' in ckpt:
+        ema_model.load_state_dict(ckpt['ema_state_dict'])
     model.train()
     return model, optimizer, loss, start_epoch, kld_mult
+
+
+def effective_kld_weight(epoch, args):
+    """
+    Annealed KLD weight for the current epoch.
+
+    - none / off: use args.kld_weight as-is
+    - linear: ramp from 0 to kld_weight over kld_anneal_epochs
+    - cyclical: within each cycle of length kld_anneal_cycle, ramp 0->kld_weight
+      over the first half of the cycle, then stay at kld_weight (Fu et al. style)
+
+    Starting near zero lets the model first learn to reconstruct; raising KLD later
+    pulls the posterior toward N(0,1) so prior sampling works.
+    """
+    target = float(getattr(args, 'kld_weight', 1/4*0.01))
+    mode = str(getattr(args, 'kld_anneal', 'none')).lower()
+    if mode in ('none', 'off', 'false', ''):
+        return target
+    if mode == 'linear':
+        warm = max(1, int(getattr(args, 'kld_anneal_epochs', 100)))
+        return target * min(1.0, float(epoch) / float(warm))
+    if mode == 'cyclical':
+        cycle = max(2, int(getattr(args, 'kld_anneal_cycle', 50)))
+        pos = epoch % cycle
+        half = cycle // 2
+        if pos < half:
+            return target * (float(pos) / float(half))
+        return target
+    raise ValueError(f"Unknown kld_anneal mode '{mode}'. Use none, linear or cyclical.")
+
+
+def build_lr_scheduler(optimizer, args, epochs):
+    """
+    Create the epoch-level LR scheduler selected by args.scheduler_type.
+    Returns None when scheduling is disabled.
+    """
+    if getattr(args, 'use_scheduler', False) is False:
+        return None
+    stype = str(getattr(args, 'scheduler_type', 'cosine')).lower()
+    if stype in ('none', 'off'):
+        return None
+    if stype == 'step':
+        step_size = int(getattr(args, 'scheduler_step_size', 100))
+        gamma = float(getattr(args, 'scheduler_gamma', 0.5))
+        return torch.optim.lr_scheduler.StepLR(optimizer, step_size=step_size, gamma=gamma)
+    if stype == 'cosine':
+        t_max = int(getattr(args, 'cosine_t_max', 0) or epochs)
+        eta_min = float(getattr(args, 'cosine_eta_min', 0.0))
+        return torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=max(1, t_max), eta_min=eta_min)
+    raise ValueError(f"Unknown scheduler_type '{stype}'. Use cosine, step or none.")
 
 
 #for multi GPU enviroment
@@ -213,16 +275,19 @@ class GPU_thread:
     but with diferent data (sub-batch).
     '''
     
-    def __init__(self,cuda_id, memory, result_queue):
+    def __init__(self,cuda_id, memory, result_queue, use_amp=False):
         self.id = cuda_id
         self.memory = memory
         self.result_queue = result_queue
+        self.use_amp = use_amp
                   
     def update_state_dict(self, new_state_dict):
         self.model.load_state_dict(new_state_dict)
         
     def predict(self, images, model):
-        predicted_image = model(images)
+        device_type = 'cuda' if images.is_cuda else 'cpu'
+        with torch.autocast(device_type=device_type, enabled=self.use_amp):
+            predicted_image = model(images)
         #mu and log_var are returned as well, so the loss can be computed over the
         #latent statistics of the whole batch and not just the sub-batch of GPU 0
         entry ={self.id : (predicted_image, model.encoder.mu, model.encoder.log_var)}
