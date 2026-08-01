@@ -1,4 +1,8 @@
 # Flexible Variational Autoencoder (VAE) 
+
+> [docs/TUTORIAL.md](docs/TUTORIAL.md) walks through the bugfixes made to this
+> project and the lessons behind each of them (in Serbian).
+
 ## To Do:
 - [ ] Add metrics and comparisons chapter
 - [ ] Add more layers to chose from when compiling the structure of encoder and decoder
