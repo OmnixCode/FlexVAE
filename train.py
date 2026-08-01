@@ -212,7 +212,7 @@ def train(args):
     for i in range(num_gpu):
         models.append(VAE(VAE_Encoder, VAE_Decoder, args).to(torch.device('cuda:'+str(i)))) 
  
-    optimizer = optim.AdamW(models[0].parameters(), lr = args.lr)
+    optimizer = optim.AdamW(models[0].parameters(), lr = args.lr, weight_decay = args.weight_decay)
     #optimizer = optim.NAdam(model.parameters(), lr = 3e-4)
     logger = SummaryWriter(os.path.join("runs", args.run_name))
     l = len(dataloader)
@@ -223,7 +223,7 @@ def train(args):
     if args.resume == True:
         models[0], optimizer, loss, start_epoch, kld_mult = load_model_checkpoint(models[0], optimizer, args.resume_path)
         if args.reinit_optim == True:
-            optimizer = optim.AdamW(models[0].parameters(), lr = args.reinit_lr)
+            optimizer = optim.AdamW(models[0].parameters(), lr = args.reinit_lr, weight_decay = args.weight_decay)
             PATH_CFG = cfg_preset_path
             with open(PATH_CFG, 'w+') as f:
                 args.reinit_optim = False
