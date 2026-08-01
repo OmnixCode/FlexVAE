@@ -6,5 +6,6 @@ tqdm>=4.60
 numpy>=1.24
 matplotlib>=3.7
 Pillow>=9.0
+pytest>=7.0
 # Only needed for the optional GUI in src/visualizer.py
 PyQt5>=5.15
