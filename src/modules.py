@@ -109,9 +109,6 @@ class VAE_Encoder(nn.Sequential):
             if (type(module) == torch.nn.modules.dropout.Dropout2d and self.dropout_early==True ) :
                 x = module(x)
                 
-            if (type(module) == torch.nn.modules.dropout.Dropout2d and self.dropout_early==True ) :
-                x = module(x)
-                
         
         #assert n == 32, str(bch)+' '+str(chan)+' '+str(n)+' '+str(m)
         mean_mat, log_variance_mat = torch.chunk(x, chunks=2, dim=1)
