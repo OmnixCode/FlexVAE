@@ -3,7 +3,6 @@
 
 import torch
 from torchvision import transforms
-from torchvision.transforms import v2
 import matplotlib.pyplot as plt
 import torchvision
 from PIL import Image
