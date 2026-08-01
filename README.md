@@ -1,7 +1,8 @@
 # Flexible Variational Autoencoder (VAE) 
 
-> [docs/TUTORIAL.md](docs/TUTORIAL.md) walks through the bugfixes made to this
-> project and the lessons behind each of them (in Serbian).
+> Learning docs:
+> - [docs/TUTORIAL.md](docs/TUTORIAL.md) — što je bilo pokvareno i koje lekcije (SR)
+> - [docs/STEP_BY_STEP.md](docs/STEP_BY_STEP.md) — praktčni plan za sledeći trening (SR)
 
 ## To Do:
 - [ ] Add metrics and comparisons chapter
