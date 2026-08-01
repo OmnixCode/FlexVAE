@@ -73,7 +73,13 @@ class VAE(nn.Module):
         x=self.decoder(x)
         return x
     
-    def loss_function(self,input_image, reconstructed_image, epoch=0, kld_mult=0, ssim_metrics = True, alpha=0.5, beta=0.5,sparse_metrics = False, lambd = 1):
+    def loss_function(self,input_image, reconstructed_image, epoch=0, kld_mult=0, ssim_metrics = True, alpha=0.5, beta=0.5,sparse_metrics = False, lambd = 1, mu=None, log_var=None):
+        #mu and log_var of the whole batch can be passed in explicitly (needed for multi-GPU
+        #training where each model copy holds only the statistics of its own sub-batch)
+        if mu is None:
+            mu = self.encoder.mu
+        if log_var is None:
+            log_var = self.encoder.log_var
 
         kld_weight=(epoch / 100) - int(epoch / 100) #bilo0.03
         kld_weight=1/4*0.01 #bilo 10000 poslednje 1/10
@@ -84,20 +90,20 @@ class VAE(nn.Module):
         else:
             alpha=1
         
-        sparse_loss = lambd *torch.sum(torch.abs(self.encoder.mu))
+        sparse_loss = lambd *torch.sum(torch.abs(mu))
         
         """
         Different reductions for two different latent space dimensions. If latent_conversion_disable == True that means that we
         keep the mean and log_variance of the lattent as a 2d tensors. If it is True, we will use nn.linear layer to convert it to 1d-tensor.
         """
         if self.latent_conversion_disable ==False:
-            kld_loss = torch.mean(-0.5 * torch.sum(1 + self.encoder.log_var - self.encoder.mu ** 2 -  self.encoder.log_var.exp(), dim = (1,2)), dim = 0)
+            kld_loss = torch.mean(-0.5 * torch.sum(1 + log_var - mu ** 2 -  log_var.exp(), dim = (1,2)), dim = 0)
         else:
-            kld_loss = torch.mean(-0.5 * torch.sum(1 + self.encoder.log_var - self.encoder.mu ** 2 -  self.encoder.log_var.exp(), dim = (1,2,3)), dim = 0)
+            kld_loss = torch.mean(-0.5 * torch.sum(1 + log_var - mu ** 2 -  log_var.exp(), dim = (1,2,3)), dim = 0)
         if self.latent_conversion_disable ==False:
-            b,c,ld = self.encoder.log_var.size()
+            b,c,ld = log_var.size()
         else:
-            b,c,l,d = self.encoder.log_var.size()
+            b,c,l,d = log_var.size()
             ld=l*d
         kld_loss= kld_loss/(c*ld)
         sparse_loss= sparse_loss/(b*c*ld)
@@ -288,21 +294,29 @@ def train(args):
                 
             """
             Get the results from the thread queues and append them into one big batch again
+            (predicted images together with mu and log_var of every sub-batch).
             """
             sequence=[None]*num_gpu
+            mu_sequence=[None]*num_gpu
+            log_var_sequence=[None]*num_gpu
             for i in range(num_gpu):
                 sub_batch_dict=result_queues.get()
                 number=set(sub_batch_dict).pop()
-                sequence[number]=sub_batch_dict[number].to(torch.device('cuda:0'))
+                sub_prediction, sub_mu, sub_log_var = sub_batch_dict[number]
+                sequence[number]=sub_prediction.to(torch.device('cuda:0'))
+                mu_sequence[number]=sub_mu.to(torch.device('cuda:0'))
+                log_var_sequence[number]=sub_log_var.to(torch.device('cuda:0'))
                 
             predicted_image = torch.cat(sequence ,dim=0)
+            mu_batch = torch.cat(mu_sequence ,dim=0)
+            log_var_batch = torch.cat(log_var_sequence ,dim=0)
 
 
 
             """
             Getting the loss term and also different parts of the loss for printing out.
             """
-            loss_params = models[0].loss_function(images, predicted_image, epoch, kld_mult)
+            loss_params = models[0].loss_function(images, predicted_image, epoch, kld_mult, mu=mu_batch, log_var=log_var_batch)
             loss = loss_params['loss']
             
             for loss_type in loss_dict:
@@ -343,6 +357,22 @@ def train(args):
             
             
             loss.backward()
+            
+            """
+            Backward pass leaves the gradients of every sub-batch on the model copy that
+            processed it. All the copies hold identical parameters (they are synced from
+            models[0] at the start of the batch), so the exact full-batch gradient is the
+            sum of the per-copy gradients. Accumulate them into models[0] (the only model
+            the optimizer updates) and clear them on the copies.
+            """
+            for i in range(1, num_gpu):
+                for param_main, param_copy in zip(models[0].parameters(), models[i].parameters()):
+                    if param_copy.grad is not None:
+                        if param_main.grad is None:
+                            param_main.grad = param_copy.grad.to(param_main.device)
+                        else:
+                            param_main.grad.add_(param_copy.grad.to(param_main.device))
+                        param_copy.grad = None
             
             div= batch_idx+1
             if ((batch_idx + 1) % args.batch_accum == 0) or (batch_idx + 1 == l): 
