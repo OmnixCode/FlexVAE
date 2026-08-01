@@ -390,6 +390,10 @@ def train(args):
             if ((batch_idx + 1) % args.batch_accum == 0) or (batch_idx + 1 == l): 
                 optimizer.step()
                 optimizer.zero_grad()
+                if args.useEMA == True:
+                    #EMA has to track every optimizer step; with decay 0.999 a
+                    #once-per-epoch update would average almost nothing
+                    ema_model.update_parameters(models[0])
                 logger.add_scalar("Total_loss", total/div, global_step=epoch * math.ceil(l/args.batch_accum) + (batch_idx+1)//args.batch_accum + ((batch_idx + 1) % args.batch_accum != 0)*int(batch_idx + 1 == l) )
                 
                 for loss_type in loss_dict:
@@ -406,10 +410,9 @@ def train(args):
             #pbar.set_postfix({'Epoch' : epoch, 'Total_loss':total/div,'rec_loss': loss_dict["Reconstruction_Loss"]/div,'KLD_loss':loss_dict["KLD"]/div,'Sparse':loss_dict["Sparse_Loss"]/div,'SIMM_loss':loss_dict["SSIM_Loss"]/div,'learn_rate':scheduler2.get_last_lr()})
             
         if args.ReduceLROnPlateau == True:
-            scheduler.step(loss)
-            
-        if args.useEMA == True:
-            ema_model.update_parameters(models[0])
+            #step on the epoch-mean loss; the loss of the last batch alone is too
+            #noisy of a signal for plateau detection
+            scheduler.step(total/div)
             
         if args.use_scheduler == True:
             scheduler2.step()    
