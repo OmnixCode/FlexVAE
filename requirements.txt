@@ -1,0 +1,19 @@
+# FlexVAE Python dependencies (inferred from imports; no manifest shipped with the repo).
+# The project targets an NVIDIA CUDA GPU (device is hardcoded to "cuda" in train.py /
+# src/inference_eval.py). Install a CUDA build of torch/torchvision on a GPU machine, e.g.:
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+# On a CPU-only machine (e.g. the Cursor Cloud VM) install the CPU build instead:
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+
+torch
+torchvision
+torchmetrics
+numpy
+matplotlib
+pillow
+tqdm
+tensorboard
+
+# Optional: only needed for the standalone PyQt5 image viewer in src/visualizer.py
+# (requires a display server). Uncomment if you want to run it.
+# PyQt5
