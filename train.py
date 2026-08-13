@@ -68,6 +68,9 @@ class VAE(nn.Module):
         self.encoder = VAE_encoder(args.encoder_struct, args.image_size, args.lat_size, latent_conversion_disable= args.latent_conversion_disable)
         self.decoder = VAE_decoder(args.decoder_struct, args.image_size, args.lat_size, latent_conversion_disable= args.latent_conversion_disable)
         self.latent_conversion_disable = args.latent_conversion_disable
+        #weight of the KLD term, tunable through the 'kld_weight' config key;
+        #the default keeps the previously hardcoded value (1/4*0.01)
+        self.kld_weight = getattr(args, 'kld_weight', 1/4*0.01)
     def forward(self, x, noise=None):
         x=self.encoder(x, noise)
         x=self.decoder(x)
@@ -81,12 +84,14 @@ class VAE(nn.Module):
         if log_var is None:
             log_var = self.encoder.log_var
 
-        kld_weight=(epoch / 100) - int(epoch / 100) #bilo0.03
-        kld_weight=1/4*0.01 #bilo 10000 poslednje 1/10
+        kld_weight = self.kld_weight
 
         recons_loss = 400*F.mse_loss(reconstructed_image, input_image)
         if ssim_metrics == True:
-            ssim_loss = SSIM(reconstructed_image, input_image)
+            #images are normalized to [-1, 1]; without an explicit data_range torchmetrics
+            #estimates it from each batch (and the decoder output is unbounded), which makes
+            #the SSIM term inconsistent between batches
+            ssim_loss = SSIM(reconstructed_image, input_image, data_range=2.0)
         else:
             alpha=1
             ssim_loss = torch.zeros((), device=input_image.device)
@@ -120,13 +125,19 @@ class VAE(nn.Module):
         pass
     
     def sample(self, n_samples, lat_size):
-        noise = torch.mul(torch.randn((n_samples, 4, lat_size)).to(torch.device('cuda:0')), 1)
-        x = self.decoder(noise)
+        """
+        The encoder outputs latents scaled by 0.18215 and the decoder divides its input
+        by the same constant. A prior sample z~N(0,1) therefore has to be scaled by
+        0.18215 before entering the decoder - otherwise the decoder sees latents with
+        std 1/0.18215 (~5.5x larger than anything seen during training).
+        """
+        noise = torch.randn((n_samples, 4, lat_size)).to(torch.device('cuda:0'))
+        x = self.decoder(noise * 0.18215)
         return(x)
     
     def sample2(self, n_samples, lat_size):
-        noise = torch.mul(torch.randn((n_samples, 4, lat_size, lat_size)).to(torch.device('cuda:0')), 1)
-        x = self.decoder(noise)
+        noise = torch.randn((n_samples, 4, lat_size, lat_size)).to(torch.device('cuda:0'))
+        x = self.decoder(noise * 0.18215)
         return(x)
     
     def encode(self, image):
@@ -206,7 +217,7 @@ def train(args):
     for i in range(num_gpu):
         models.append(VAE(VAE_Encoder, VAE_Decoder, args).to(torch.device('cuda:'+str(i)))) 
  
-    optimizer = optim.AdamW(models[0].parameters(), lr = args.lr)
+    optimizer = optim.AdamW(models[0].parameters(), lr = args.lr, weight_decay = args.weight_decay)
     #optimizer = optim.NAdam(model.parameters(), lr = 3e-4)
     logger = SummaryWriter(os.path.join("runs", args.run_name))
     l = len(dataloader)
@@ -217,7 +228,7 @@ def train(args):
     if args.resume == True:
         models[0], optimizer, loss, start_epoch, kld_mult = load_model_checkpoint(models[0], optimizer, args.resume_path)
         if args.reinit_optim == True:
-            optimizer = optim.AdamW(models[0].parameters(), lr = args.reinit_lr)
+            optimizer = optim.AdamW(models[0].parameters(), lr = args.reinit_lr, weight_decay = args.weight_decay)
             PATH_CFG = cfg_preset_path
             with open(PATH_CFG, 'w+') as f:
                 args.reinit_optim = False
@@ -379,6 +390,10 @@ def train(args):
             if ((batch_idx + 1) % args.batch_accum == 0) or (batch_idx + 1 == l): 
                 optimizer.step()
                 optimizer.zero_grad()
+                if args.useEMA == True:
+                    #EMA has to track every optimizer step; with decay 0.999 a
+                    #once-per-epoch update would average almost nothing
+                    ema_model.update_parameters(models[0])
                 logger.add_scalar("Total_loss", total/div, global_step=epoch * math.ceil(l/args.batch_accum) + (batch_idx+1)//args.batch_accum + ((batch_idx + 1) % args.batch_accum != 0)*int(batch_idx + 1 == l) )
                 
                 for loss_type in loss_dict:
@@ -395,10 +410,9 @@ def train(args):
             #pbar.set_postfix({'Epoch' : epoch, 'Total_loss':total/div,'rec_loss': loss_dict["Reconstruction_Loss"]/div,'KLD_loss':loss_dict["KLD"]/div,'Sparse':loss_dict["Sparse_Loss"]/div,'SIMM_loss':loss_dict["SSIM_Loss"]/div,'learn_rate':scheduler2.get_last_lr()})
             
         if args.ReduceLROnPlateau == True:
-            scheduler.step(loss)
-            
-        if args.useEMA == True:
-            ema_model.update_parameters(models[0])
+            #step on the epoch-mean loss; the loss of the last batch alone is too
+            #noisy of a signal for plateau detection
+            scheduler.step(total/div)
             
         if args.use_scheduler == True:
             scheduler2.step()    
@@ -413,7 +427,7 @@ def train(args):
         #sample_on_device(location, epoch, args, rate=5, device='cpu')
         models[0].eval()
         with torch.no_grad():
-            images =models[0].sample2(4,16)
+            images =models[0].sample2(4, args.lat_size)
             save_images(images.detach(), os.path.join("samples", args.run_name, f"epoch_{epoch}_sampling.jpg"))
         models[0].train()
 
@@ -456,7 +470,7 @@ def sample_on_device(location, epoch, args, rate=5, device='cpu'):
         with torch.no_grad():
             ckpt = torch.load(location)
             model.load_state_dict(ckpt['model_state_dict']) #this was missing
-            images =model.sample2(24,32)
+            images =model.sample2(24, args.lat_size)
             save_images(images.detach(), os.path.join("samples", args.run_name, f"{epoch}_orig.jpg"))
 
 

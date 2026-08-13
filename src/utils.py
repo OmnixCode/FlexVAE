@@ -3,7 +3,6 @@
 
 import torch
 from torchvision import transforms
-from torchvision.transforms import v2
 import matplotlib.pyplot as plt
 import torchvision
 from PIL import Image
@@ -58,6 +57,7 @@ def get_data(args):
         torchvision.transforms.Resize(int(args.image_size + 1/4 *args.image_size)),  # args.image_size + 1/4 *args.image_size
         #torchvision.transforms.RandomResizedCrop(args.image_size, scale=(0.8, 1.0)),
         torchvision.transforms.CenterCrop(args.image_size),
+        torchvision.transforms.RandomHorizontalFlip(p=0.5),
         torchvision.transforms.ToTensor(),
         #AddGaussianNoise(0.1, 0.08),
         torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
@@ -72,7 +72,6 @@ def load_image(image_path, args):
         SquarePad(),
         torchvision.transforms.Resize(int(args.image_size + 1/4 *args.image_size)),  # args.image_size + 1/4 *args.image_size
         #torchvision.transforms.RandomResizedCrop(args.image_size, scale=(0.8, 1.0)),
-        v2.RandomHorizontalFlip(p=0.5),
         torchvision.transforms.CenterCrop(args.image_size),
         torchvision.transforms.ToTensor(),
         torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
