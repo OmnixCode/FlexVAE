@@ -44,6 +44,7 @@ from utils import setup_logging
 from utils import GPU_thread
 from utils import load_model_checkpoint
 from utils import Configs
+from utils import effective_kld_weight, build_lr_scheduler
 
 
 
@@ -212,10 +213,20 @@ def train(args):
     mem_ratio=[x/np.min(mem_gpu) for x in mem_gpu]
     mem_fraction=[x/np.sum(mem_ratio) for x in mem_ratio]
 
+    use_amp = bool(getattr(args, 'use_amp', False))
+    torch_compile = bool(getattr(args, 'torch_compile', False))
+    ema_decay = float(getattr(args, 'ema_decay', 0.999))
+    sample_with_ema = bool(getattr(args, 'sample_with_ema', True))
+
     #create model on each GPU
     models=[]
     for i in range(num_gpu):
-        models.append(VAE(VAE_Encoder, VAE_Decoder, args).to(torch.device('cuda:'+str(i)))) 
+        model_i = VAE(VAE_Encoder, VAE_Decoder, args).to(torch.device('cuda:'+str(i)))
+        #torch.compile is opt-in and most useful on a single GPU; with multi-GPU the
+        #per-batch state_dict sync still works, but first-run compile can be slow
+        if torch_compile:
+            model_i = torch.compile(model_i)
+        models.append(model_i)
  
     optimizer = optim.AdamW(models[0].parameters(), lr = args.lr, weight_decay = args.weight_decay)
     #optimizer = optim.NAdam(model.parameters(), lr = 3e-4)
@@ -223,10 +234,20 @@ def train(args):
     l = len(dataloader)
     start_epoch = 0
     kld_mult=0.01
+    ema_model = None
+    scaler = torch.amp.GradScaler('cuda', enabled=use_amp)
+
+    if args.useEMA == True:
+        ema_model = torch.optim.swa_utils.AveragedModel(
+            models[0],
+            multi_avg_fn=torch.optim.swa_utils.get_ema_multi_avg_fn(ema_decay),
+        )
  
     
     if args.resume == True:
-        models[0], optimizer, loss, start_epoch, kld_mult = load_model_checkpoint(models[0], optimizer, args.resume_path)
+        models[0], optimizer, loss, start_epoch, kld_mult = load_model_checkpoint(
+            models[0], optimizer, args.resume_path, ema_model=ema_model
+        )
         if args.reinit_optim == True:
             optimizer = optim.AdamW(models[0].parameters(), lr = args.reinit_lr, weight_decay = args.weight_decay)
             PATH_CFG = cfg_preset_path
@@ -234,19 +255,20 @@ def train(args):
                 args.reinit_optim = False
                 json.dump(args._variables, f, indent=2)
         #optimizer = optim.NAdam(model.parameters(), lr = 2e-4)
-
-    if args.useEMA == True:
-        ema_model = torch.optim.swa_utils.AveragedModel(models[0], multi_avg_fn=torch.optim.swa_utils.get_ema_multi_avg_fn(0.999))
     
     if args.ReduceLROnPlateau == True:
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min')
         
-    if args.use_scheduler == True:   
-        scheduler2 = torch.optim.lr_scheduler.StepLR(optimizer, step_size=100, gamma=0.5)
+    #cosine by default (avoids the StepLR geometric decay that can kill LR on long runs);
+    #set scheduler_type to "step" to keep the old behavior
+    scheduler2 = build_lr_scheduler(optimizer, args, args.epochs)
     
     for epoch in range(start_epoch, start_epoch + args.epochs):
         
         logging.info(f"Starting epoch {epoch}:")
+        #annealed KLD weight for this epoch (same value used by models[0].loss_function)
+        models[0].kld_weight = effective_kld_weight(epoch, args)
+        logger.add_scalar("kld_weight", models[0].kld_weight, global_step=epoch)
         
         #custom_bar_format = "{l_bar}{bar} | {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]"
 
@@ -277,7 +299,7 @@ def train(args):
 
             
             
-            images = images.to(torch.device('cuda:0'))
+            images = images.to(torch.device('cuda:0'), non_blocking=bool(getattr(args, 'pin_memory', False)))
             #noise = torch.randn((images.size(0), 4, args.lat_size)).to(torch.device('cuda:0'))
             #noise = torch.randn((images.size(0), 4, args.lat_size))
             batch_size = np.array(images.size()[0])
@@ -297,8 +319,8 @@ def train(args):
             thread_instances=[]
             thread=[]
             for i in range(num_gpu):
-                thread_instances.append(GPU_thread(cuda_id=i, memory=mem_gpu[i], result_queue=result_queues))
-                thread.append(threading.Thread(target=thread_instances[i].predict, args=(chunks[i].to(torch.device('cuda:'+str(i))), models[i])))
+                thread_instances.append(GPU_thread(cuda_id=i, memory=mem_gpu[i], result_queue=result_queues, use_amp=use_amp))
+                thread.append(threading.Thread(target=thread_instances[i].predict, args=(chunks[i].to(torch.device('cuda:'+str(i)), non_blocking=True), models[i])))
                 thread[i].start()
                 
             for i in range(num_gpu):
@@ -328,8 +350,9 @@ def train(args):
             """
             Getting the loss term and also different parts of the loss for printing out.
             """
-            loss_params = models[0].loss_function(images, predicted_image, epoch, kld_mult, mu=mu_batch, log_var=log_var_batch)
-            loss = loss_params['loss']
+            with torch.autocast(device_type='cuda', enabled=use_amp):
+                loss_params = models[0].loss_function(images, predicted_image, epoch, kld_mult, mu=mu_batch, log_var=log_var_batch)
+                loss = loss_params['loss']
             
             for loss_type in loss_dict:
                 loss_dict[loss_type] += loss_params[loss_type].item()
@@ -368,7 +391,7 @@ def train(args):
             
             
             
-            loss.backward()
+            scaler.scale(loss).backward()
             
             """
             Backward pass leaves the gradients of every sub-batch on the model copy that
@@ -388,7 +411,8 @@ def train(args):
             
             div= batch_idx+1
             if ((batch_idx + 1) % args.batch_accum == 0) or (batch_idx + 1 == l): 
-                optimizer.step()
+                scaler.step(optimizer)
+                scaler.update()
                 optimizer.zero_grad()
                 if args.useEMA == True:
                     #EMA has to track every optimizer step; with decay 0.999 a
@@ -406,6 +430,7 @@ def train(args):
             for loss_type in loss_dict:
                 od[loss_type] = loss_dict[loss_type]/div
             od['learn_rate'] = [group['lr'] for group in optimizer.param_groups]
+            od['kld_w'] = models[0].kld_weight
             pbar.set_postfix(od)
             #pbar.set_postfix({'Epoch' : epoch, 'Total_loss':total/div,'rec_loss': loss_dict["Reconstruction_Loss"]/div,'KLD_loss':loss_dict["KLD"]/div,'Sparse':loss_dict["Sparse_Loss"]/div,'SIMM_loss':loss_dict["SSIM_Loss"]/div,'learn_rate':scheduler2.get_last_lr()})
             
@@ -414,20 +439,24 @@ def train(args):
             #noisy of a signal for plateau detection
             scheduler.step(total/div)
             
-        if args.use_scheduler == True:
+        if scheduler2 is not None:
             scheduler2.step()    
             
         save_images(images.detach(), os.path.join("results", args.run_name, f"{epoch}_orig.jpg"))
         save_images(predicted_image.detach(), os.path.join("results", args.run_name, f"{epoch}.jpg"))
         #torch.save(model.state_dict(), os.path.join("models", args.run_name, f"ckpt.pt"))
 
-        save_model_checkpoint(models[0], optimizer, loss, epoch, images.size()[-1], args.lat_size, kld_mult, args)
-        save_model_backup(models[0], optimizer, loss, epoch, images.size()[-1], args.lat_size, kld_mult, args)
+        save_model_checkpoint(models[0], optimizer, loss, epoch, images.size()[-1], args.lat_size, kld_mult, args, ema_model=ema_model)
+        save_model_backup(models[0], optimizer, loss, epoch, images.size()[-1], args.lat_size, kld_mult, args, ema_model=ema_model)
         
         #sample_on_device(location, epoch, args, rate=5, device='cpu')
-        models[0].eval()
+        sample_source = models[0]
+        if args.useEMA == True and sample_with_ema and ema_model is not None:
+            #AveragedModel wraps the VAE; sample2 lives on the underlying module
+            sample_source = ema_model.module
+        sample_source.eval()
         with torch.no_grad():
-            images =models[0].sample2(4, args.lat_size)
+            images =sample_source.sample2(4, args.lat_size)
             save_images(images.detach(), os.path.join("samples", args.run_name, f"epoch_{epoch}_sampling.jpg"))
         models[0].train()
 
