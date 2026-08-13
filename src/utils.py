@@ -224,7 +224,9 @@ class GPU_thread:
         
     def predict(self, images, model):
         predicted_image = model(images)
-        entry ={self.id : predicted_image}
+        #mu and log_var are returned as well, so the loss can be computed over the
+        #latent statistics of the whole batch and not just the sub-batch of GPU 0
+        entry ={self.id : (predicted_image, model.encoder.mu, model.encoder.log_var)}
         self.result_queue.put(entry)
  
 class Configs:

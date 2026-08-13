@@ -73,7 +73,13 @@ class VAE(nn.Module):
         x=self.decoder(x)
         return x
     
-    def loss_function(self,input_image, reconstructed_image, epoch=0, kld_mult=0, ssim_metrics = True, alpha=0.5, beta=0.5,sparse_metrics = False, lambd = 1):
+    def loss_function(self,input_image, reconstructed_image, epoch=0, kld_mult=0, ssim_metrics = True, alpha=0.5, beta=0.5,sparse_metrics = False, lambd = 1, mu=None, log_var=None):
+        #mu and log_var of the whole batch can be passed in explicitly (needed for multi-GPU
+        #training where each model copy holds only the statistics of its own sub-batch)
+        if mu is None:
+            mu = self.encoder.mu
+        if log_var is None:
+            log_var = self.encoder.log_var
 
         kld_weight=(epoch / 100) - int(epoch / 100) #bilo0.03
         kld_weight=1/4*0.01 #bilo 10000 poslednje 1/10
@@ -83,21 +89,22 @@ class VAE(nn.Module):
             ssim_loss = SSIM(reconstructed_image, input_image)
         else:
             alpha=1
+            ssim_loss = torch.zeros((), device=input_image.device)
         
-        sparse_loss = lambd *torch.sum(torch.abs(self.encoder.mu))
+        sparse_loss = lambd *torch.sum(torch.abs(mu))
         
         """
         Different reductions for two different latent space dimensions. If latent_conversion_disable == True that means that we
         keep the mean and log_variance of the lattent as a 2d tensors. If it is True, we will use nn.linear layer to convert it to 1d-tensor.
         """
         if self.latent_conversion_disable ==False:
-            kld_loss = torch.mean(-0.5 * torch.sum(1 + self.encoder.log_var - self.encoder.mu ** 2 -  self.encoder.log_var.exp(), dim = (1,2)), dim = 0)
+            kld_loss = torch.mean(-0.5 * torch.sum(1 + log_var - mu ** 2 -  log_var.exp(), dim = (1,2)), dim = 0)
         else:
-            kld_loss = torch.mean(-0.5 * torch.sum(1 + self.encoder.log_var - self.encoder.mu ** 2 -  self.encoder.log_var.exp(), dim = (1,2,3)), dim = 0)
+            kld_loss = torch.mean(-0.5 * torch.sum(1 + log_var - mu ** 2 -  log_var.exp(), dim = (1,2,3)), dim = 0)
         if self.latent_conversion_disable ==False:
-            b,c,ld = self.encoder.log_var.size()
+            b,c,ld = log_var.size()
         else:
-            b,c,l,d = self.encoder.log_var.size()
+            b,c,l,d = log_var.size()
             ld=l*d
         kld_loss= kld_loss/(c*ld)
         sparse_loss= sparse_loss/(b*c*ld)
@@ -107,7 +114,7 @@ class VAE(nn.Module):
 
         loss = alpha*recons_loss + ssim_metrics*beta*(1-ssim_loss) + kld_weight * kld_loss + sparse_metrics*0*sparse_loss
 
-        return{'loss': loss, 'Reconstruction_Loss':(alpha*recons_loss.detach()),'SSIM_Loss':(beta*(1-ssim_loss.detach())),'Sparse_Loss':20*sparse_loss, 'KLD':(kld_weight * kld_loss).detach()}
+        return{'loss': loss, 'Reconstruction_Loss':(alpha*recons_loss.detach()),'SSIM_Loss':(ssim_metrics*beta*(1-ssim_loss.detach())),'Sparse_Loss':20*sparse_loss.detach(), 'KLD':(kld_weight * kld_loss).detach()}
     
     def loss_function_correct9():
         pass
@@ -288,21 +295,29 @@ def train(args):
                 
             """
             Get the results from the thread queues and append them into one big batch again
+            (predicted images together with mu and log_var of every sub-batch).
             """
             sequence=[None]*num_gpu
+            mu_sequence=[None]*num_gpu
+            log_var_sequence=[None]*num_gpu
             for i in range(num_gpu):
                 sub_batch_dict=result_queues.get()
                 number=set(sub_batch_dict).pop()
-                sequence[number]=sub_batch_dict[number].to(torch.device('cuda:0'))
+                sub_prediction, sub_mu, sub_log_var = sub_batch_dict[number]
+                sequence[number]=sub_prediction.to(torch.device('cuda:0'))
+                mu_sequence[number]=sub_mu.to(torch.device('cuda:0'))
+                log_var_sequence[number]=sub_log_var.to(torch.device('cuda:0'))
                 
             predicted_image = torch.cat(sequence ,dim=0)
+            mu_batch = torch.cat(mu_sequence ,dim=0)
+            log_var_batch = torch.cat(log_var_sequence ,dim=0)
 
 
 
             """
             Getting the loss term and also different parts of the loss for printing out.
             """
-            loss_params = models[0].loss_function(images, predicted_image, epoch, kld_mult)
+            loss_params = models[0].loss_function(images, predicted_image, epoch, kld_mult, mu=mu_batch, log_var=log_var_batch)
             loss = loss_params['loss']
             
             for loss_type in loss_dict:
@@ -344,6 +359,22 @@ def train(args):
             
             loss.backward()
             
+            """
+            Backward pass leaves the gradients of every sub-batch on the model copy that
+            processed it. All the copies hold identical parameters (they are synced from
+            models[0] at the start of the batch), so the exact full-batch gradient is the
+            sum of the per-copy gradients. Accumulate them into models[0] (the only model
+            the optimizer updates) and clear them on the copies.
+            """
+            for i in range(1, num_gpu):
+                for param_main, param_copy in zip(models[0].parameters(), models[i].parameters()):
+                    if param_copy.grad is not None:
+                        if param_main.grad is None:
+                            param_main.grad = param_copy.grad.to(param_main.device)
+                        else:
+                            param_main.grad.add_(param_copy.grad.to(param_main.device))
+                        param_copy.grad = None
+            
             div= batch_idx+1
             if ((batch_idx + 1) % args.batch_accum == 0) or (batch_idx + 1 == l): 
                 optimizer.step()
@@ -359,7 +390,7 @@ def train(args):
             od['Epoch'] = epoch
             for loss_type in loss_dict:
                 od[loss_type] = loss_dict[loss_type]/div
-            od['learn_rate'] = scheduler2.get_last_lr()
+            od['learn_rate'] = [group['lr'] for group in optimizer.param_groups]
             pbar.set_postfix(od)
             #pbar.set_postfix({'Epoch' : epoch, 'Total_loss':total/div,'rec_loss': loss_dict["Reconstruction_Loss"]/div,'KLD_loss':loss_dict["KLD"]/div,'Sparse':loss_dict["Sparse_Loss"]/div,'SIMM_loss':loss_dict["SSIM_Loss"]/div,'learn_rate':scheduler2.get_last_lr()})
             
@@ -369,7 +400,8 @@ def train(args):
         if args.useEMA == True:
             ema_model.update_parameters(models[0])
             
-        scheduler2.step()    
+        if args.use_scheduler == True:
+            scheduler2.step()    
             
         save_images(images.detach(), os.path.join("results", args.run_name, f"{epoch}_orig.jpg"))
         save_images(predicted_image.detach(), os.path.join("results", args.run_name, f"{epoch}.jpg"))
@@ -530,6 +562,20 @@ def exclusive_flags(parser, flags):
         raise argparse.ArgumentError(None, "Exactly one of {} must be set.".format(', '.join(flags)))
 
 
+def str2bool(value):
+    """
+    Parser for boolean command line arguments. Plain bool() cannot be used because
+    bool('False') evaluates to True (any non-empty string is truthy).
+    """
+    if isinstance(value, bool):
+        return value
+    if value.lower() in ('true', 't', 'yes', 'y', '1'):
+        return True
+    if value.lower() in ('false', 'f', 'no', 'n', '0'):
+        return False
+    raise argparse.ArgumentTypeError(f"Boolean value expected, got '{value}'")
+
+
 def decode_action(string):
     # Splitting the string into parameters
     params = string.split()
@@ -579,7 +625,8 @@ if __name__ == "__main__":
         parser.add_argument('-inter','--flag_inter', nargs='+', action='store', help='Interpolate between two images in latent space -inter')
 
         for key, value in config._variables.items():
-            parser.add_argument(f'-{key}', nargs=1, type = type(value), action='store', help='Check the documentation')
+            arg_type = str2bool if isinstance(value, bool) else type(value)
+            parser.add_argument(f'-{key}', nargs=1, type = arg_type, action='store', help='Check the documentation')
 
         '''
         add exponential estimator function, change estimator to include how many gpus are active ....
@@ -587,7 +634,7 @@ if __name__ == "__main__":
 
 
         args = parser.parse_args()
-        exclusive_flags(args, ['flag_t', 'flag_i', 'flag_e', 'flag_inter'])
+        exclusive_flags(args, ['flag_t', 'flag_i', 'flag_e', 'flag_d', 'flag_inter'])
         # Print the argument values
         # Access the flags
         if args.flag_mem:

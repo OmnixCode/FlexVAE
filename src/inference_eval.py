@@ -211,13 +211,14 @@ def interpolate(img1, img2, percentage, config, model):
         load_folder2=config.interpolate_folder2
         interpolation_output_folder= config.inter_out
         #images used for interpolation
-        pic1=load_image(load_folder1+str(img1)).to(torch.device('cuda:0'))
-        pic2=load_image(load_folder2+str(img2)).to(torch.device('cuda:0'))
+        pic1=load_image(load_folder1+str(img1), config).to(torch.device('cuda:0'))
+        pic2=load_image(load_folder2+str(img2), config).to(torch.device('cuda:0'))
+        percentage = float(percentage)
         if (percentage < 0) or (percentage > 1):   
             # raise the ValueError
             raise ValueError("Please add a value for percentage between 0 and 1")
-        #pic_in= (pic1*percentage+pic2*(1-percentage))/2
-        pic_in= (pic1*percentage+pic2*(1-percentage))/2
+        #weighted average of the two images (weights already sum to 1, no extra division)
+        pic_in= pic1*percentage+pic2*(1-percentage)
         
         #noise = torch.randn((pic1.size(0), 4, 256)).to(torch.device('cuda:0'))
         #pic_res=model(pic_in,noise)
